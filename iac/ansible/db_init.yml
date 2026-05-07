@@ -1,0 +1,86 @@
+---
+- name: Managed RDS Initialization via Native Ansible Modules
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    # AWS Infrastructure
+    ec2_instance_id: "i-02852aa1384e10731" # Change
+    rds_endpoint: "todo-db.c962yekmm5ja.us-east-2.rds.amazonaws.com"
+    region: "us-east-2"
+    secret_name: "arn:aws:secretsmanager:us-east-2:131912109503:secret:rds!db-13e88\
+      918-e4cb-4a29-ac20-f57afa34b2ad-VOFStl" # Change
+
+    # Database Configuration
+    db_name: "todo_db"
+    db_port: 5432
+    sql_file: "../../database/init.sql"
+
+    # Idempotency Lock
+    ssm_state_parameter: "/database/rds/init_status"
+
+  tasks:
+    - name: Fetch and Parse DB Credentials via Lookup
+      ansible.builtin.set_fact:
+        db_creds: "{{ lookup('amazon.aws.aws_secret', secret_name, region=region) |
+          from_json }}"
+      no_log: true
+
+    - name: Check initialization status via AWS CLI
+      ansible.builtin.shell: >
+        aws ssm get-parameter \
+          --name "/database/rds/init_status" \
+          --region "{{ region }}" \
+          --query "Parameter.Value" \
+          --output text
+      register: cli_init_state
+      failed_when: false
+      changed_when: false
+
+    - name: Initialization Block
+      # We run if the list is empty (parameter doesn't exist) OR if the value isn't 'completed'
+      when: cli_init_state.rc != 0 or cli_init_state.stdout | trim != 'completed'
+      block:
+        - name: Establish SSM Tunnel (Background)
+          ansible.builtin.shell: |
+            nohup aws ssm start-session \
+              --target "{{ ec2_instance_id }}" \
+              --document-name AWS-StartPortForwardingSessionToRemoteHost \
+              --parameters host="{{ rds_endpoint }}",portNumber="{{ db_port }}",localPortNumber="{{ db_port }}" > /dev/null 2>&1 &
+          changed_when: false
+
+        - name: Wait for tunnel to stabilize
+          ansible.builtin.wait_for:
+            port: "{{ db_port }}"
+            host: 127.0.0.1
+            timeout: 30
+
+        - name: Run SQL initialization script
+          community.postgresql.postgresql_query:
+            login_host: "127.0.0.1"
+            login_user: "{{ db_creds.username }}"
+            login_password: "{{ db_creds.password }}"
+            port: "{{ db_port }}"
+            db: "{{ db_name }}"
+            path_to_script: "{{ sql_file }}"
+            encoding: "UTF-8"
+          register: query_result
+
+        - name: Mark Initialization as Completed via AWS CLI
+          ansible.builtin.shell: >
+            aws ssm put-parameter \
+              --name "/database/rds/init_status" \
+              --value "completed" \
+              --type "String" \
+              --overwrite \
+              --region "{{ region }}"
+          changed_when: true
+
+      always:
+        - name: Terminate SSM Tunnel and Plugin Processes
+          ansible.builtin.shell: |
+            pkill -f "aws ssm start-session.*{{ ec2_instance_id }}"
+            pkill -f "session-manager-plugin"
+          failed_when: false
+          changed_when: false

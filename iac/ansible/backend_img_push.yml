@@ -1,13 +1,13 @@
---- # UNUSED. MOVED INTO CI/CD
+---
 - name: Automate AWS backend ECR Push Latest
-  hosts: local
+  hosts: localhost
   gather_facts: false
   vars:
     aws_region: "us-east-2"
     ecr_registry: "131912109503.dkr.ecr.us-east-2.amazonaws.com"
     image_name: "todo-backend-repo"
     full_image_path: "{{ ecr_registry }}/{{ image_name }}:latest"
-    project_directory: "../../../backend"
+    project_directory: "../../backend"
 
   tasks:
     - name: Authenticate Docker client to AWS ECR
