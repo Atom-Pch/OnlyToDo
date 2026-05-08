@@ -49,5 +49,5 @@ module "env_bucket" {
 resource "aws_s3_object" "backend_env" {
   bucket = module.env_bucket.s3_bucket_id
   key    = ".env"
-  source = "../../backend/.env"
+  source = "${path.module}/.env"
 }

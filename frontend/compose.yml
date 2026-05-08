@@ -1,9 +1,0 @@
-services:
-  frontend:
-    build:
-      context: .
-    container_name: sveltekit-single
-    ports:
-      - "${FRONTEND_PORT}:3000"
-    environment:
-      - VITE_API_URL=$VITE_API_URL

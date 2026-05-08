@@ -1,10 +1,10 @@
 <main class="max-w-3xl mx-auto pt-16 sm:pt-24 pb-12 px-4 sm:px-6 text-center">
 	<h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-		Welcome to the <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">DevOps To-Do</span> App
+		Welcome to the <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">To-Do</span> App!
 	</h1>
 	
 	<p class="text-lg sm:text-xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto">
-		This is a simple application to gain DevOps experience using Go for the backend and Sveltekit for the frontend.
+		This is a simple web application created solely as a vehicle for my DevOps project using Go for the backend and Sveltekit for the frontend.
 	</p>
 	
 	<div class="bg-gray-800 rounded-2xl p-8 sm:p-10 shadow-xl border border-gray-700 mb-10">
