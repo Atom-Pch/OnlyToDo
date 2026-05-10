@@ -18,6 +18,8 @@ variables:
   DB_PORT: 5432
   SQL_FILE: "database/init.sql"
   CORE_TABLE_NAME: "users"
+  FRONTEND_REPO: "todo-frontend-repo"
+  BACKEND_REPO: "todo-backend-repo"
 
 .aws_oidc_auth: &aws_oidc_auth
   id_tokens:
@@ -27,7 +29,7 @@ variables:
     - echo "${GITLAB_OIDC_TOKEN}" > /tmp/web_identity_token
     - export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/web_identity_token
 
-build_and_push_images:
+build_and_push_images_latest:
   stage: build
   image: docker:24.0.5
   services:
@@ -36,15 +38,19 @@ build_and_push_images:
   script:
     - apk add --no-cache aws-cli
     - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-    - docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend:latest ./frontend
-    - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/frontend:latest
-    - docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend:latest ./backend
-    - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/backend:latest
+
+    - docker build --provenance=false -t $FRONTEND_REPO ./frontend
+    - docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
+    - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
+
+    - docker build --provenance=false -t $BACKEND_REPO ./backend
+    - docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
+    - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
 
 initialize_database:
   stage: db_init
   image: ubuntu:22.04
-  <<: *aws_oidc_auth 
+  <<: *aws_oidc_auth
   before_script:
     - !reference [.aws_oidc_auth, before_script] # Cleanly imports the OIDC token setup
     - export DEBIAN_FRONTEND=noninteractive
@@ -72,7 +78,6 @@ initialize_database:
         --parameters host="$RDS_ENDPOINT",portNumber="$DB_PORT",localPortNumber="$DB_PORT" \
         --region "$AWS_REGION" > /dev/null 2>&1 &
     - TUNNEL_PID=$!
-    
     - echo "Waiting for tunnel to stabilize..."
     # Loops until it can successfully reach port 5432 on localhost, or gives up after ~30 seconds
     - for i in {1..15}; do nc -z 127.0.0.1 $DB_PORT && break || sleep 2; done
