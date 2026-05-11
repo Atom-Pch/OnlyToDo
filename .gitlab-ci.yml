@@ -1,15 +1,17 @@
 stages:
-  - ecr_push
+  - e2e_test
+  - img_push
   - db_init
 
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
     - when: never
 
 variables:
-  EC2_INSTANCE_ID: "i-0c3b9b0d96a939724" # CHANGE
-  DB_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:rds!db-e70792c1-dde6-4368-a78d-95395d9a2031-qGRQWm" # CHANGE
+  EC2_INSTANCE_ID: "i-04225d1f79be5af51" # CHANGE
+  DB_SECRET: "rds!db-a7edebb5-2111-4fb0-8b74-6f87d4fe76f9" # CHANGE
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitLab_ECRImagePush_Role"
   AWS_ACCOUNT_ID: "131912109503"
   RDS_ENDPOINT: "todo-db.c962yekmm5ja.us-east-2.rds.amazonaws.com"
@@ -29,8 +31,31 @@ variables:
     - echo "${GITLAB_OIDC_TOKEN}" > /tmp/web_identity_token
     - export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/web_identity_token
 
+# ---------------------------------------------------------
+# STAGE: PLAYWRIGHT END-TO-END TEST
+# ---------------------------------------------------------
+run_playwright_tests:
+  stage: e2e_test
+  image: mcr.microsoft.com/playwright:v1.59.0-noble
+  rules:
+    # 2. JOB RULE: Only run this on git push to main
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
+  script:
+    - cd frontend/tests/ # Or wherever your tests live
+    - npm ci
+    - npx playwright install --with-deps
+    - npm run test:e2e
+  artifacts:
+    when: always
+    paths:
+      - frontend/cicd_test-report/ # Saves test results so you can view them in GitLab
+    expire_in: 1 day
+
+# ---------------------------------------------------------
+# STAGE: BUILD AND PUSH IMAGE TO ECR
+# ---------------------------------------------------------
 build_and_push_images_latest:
-  stage: ecr_push
+  stage: img_push
   image: docker:29.4.1-alpine3.23
   <<: *aws_oidc_auth
   script:
@@ -45,10 +70,16 @@ build_and_push_images_latest:
     - docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
     - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
 
+# ---------------------------------------------------------
+# STAGE: DB INIT ON NEW RDS
+# ---------------------------------------------------------
 initialize_database:
   stage: db_init
   image: ubuntu:22.04
   <<: *aws_oidc_auth
+  rules:
+    # JOB RULE: Only run this during your daily manual startup
+    - if: $CI_PIPELINE_SOURCE == "web"
   before_script:
     - !reference [.aws_oidc_auth, before_script] # Cleanly imports the OIDC token setup
     - export DEBIAN_FRONTEND=noninteractive
@@ -64,7 +95,7 @@ initialize_database:
 
   script:
     - echo "Fetching DB Credentials via Lookup..."
-    - SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+    - SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET --region $AWS_REGION --query SecretString --output text)
     - DB_USER=$(echo $SECRET_JSON | jq -r .username)
     - DB_PASS=$(echo $SECRET_JSON | jq -r .password)
 
