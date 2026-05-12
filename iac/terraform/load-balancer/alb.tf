@@ -34,6 +34,17 @@ module "alb" {
       target_type       = "ip"
       create_attachment = false
     }
+
+    tg-grafana = {
+      protocol = "HTTP"
+      port     = 6060
+      health_check = {
+        enabled = true
+        path    = "/"
+      }
+      target_type       = "ip"
+      create_attachment = false
+    }
   }
 
   listeners = {
@@ -66,6 +77,19 @@ module "alb" {
           conditions = [{
             path_pattern = {
               values = ["/api*"]
+            }
+          }]
+        }
+        grafana_path = {
+          priority = 99
+          actions = [{
+            forward = {
+              target_group_key = "tg-grafana"
+            }
+          }]
+          conditions = [{
+            path_pattern = {
+              values = ["/grafana*"]
             }
           }]
         }

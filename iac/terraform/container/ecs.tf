@@ -16,14 +16,12 @@ module "ecs" {
           image     = "${module.frontend_repo.repository_url}:latest"
           essential = true
 
-          portMappings = [
-            {
-              name          = "todo-frontend-task"
-              containerPort = 3000
-              hostPort      = 3000
-              protocol      = "tcp"
-            }
-          ]
+          portMappings = [{
+            name          = "frontend-container"
+            containerPort = 3000
+            hostPort      = 3000
+            protocol      = "tcp"
+          }]
         }
       }
 
@@ -54,51 +52,45 @@ module "ecs" {
           image     = "${module.backend_repo.repository_url}:latest"
           essential = true
 
-          portMappings = [
-            {
-              name          = "todo-backend-task"
-              containerPort = 8080
-              hostPort      = 8080
-              protocol      = "tcp"
-            }
-          ]
+          portMappings = [{
+            name          = "backend-container"
+            containerPort = 8080
+            hostPort      = 8080
+            protocol      = "tcp"
+          }]
 
           environment = [
             {
-              name = "DB_HOST"
-              value  = var.db_address
+              name  = "DB_HOST"
+              value = var.db_address
             },
             {
-              name = "DB_USER"
-              value  = "atom"
+              name  = "DB_USER"
+              value = "atom"
             },
             {
-              name = "DB_NAME"
-              value  = "todo_db"
+              name  = "DB_NAME"
+              value = "todo_db"
             },
             {
-              name ="S3_BUCKET_NAME"
+              name  = "S3_BUCKET_NAME"
               value = var.s3_files_name
             },
             {
-              name = "AWS_REGION"
+              name  = "AWS_REGION"
               value = "us-east-2"
             }
           ]
 
-          secrets = [
-            {
-              name = "DB_PASS"
-              valueFrom = "${var.rds_secret_arn}:password::"
-            }
-          ]
+          secrets = [{
+            name      = "DB_PASS"
+            valueFrom = "${var.rds_secret_arn}:password::"
+          }]
 
-          environmentFiles = [
-            {
-              value = "${var.s3_env_arn}/.env"
-              type  = "s3"
-            }
-          ]
+          environmentFiles = [{
+            value = "${var.s3_env_arn}/.env"
+            type  = "s3"
+          }]
         }
       }
 
@@ -119,7 +111,12 @@ module "ecs" {
       }
 
       task_exec_iam_role_policies = {
-        env_policy   = var.todo_env_policy
+        env_policy = var.todo_env_policy
+      }
+
+      service_registries = {
+        registry_arn = aws_service_discovery_service.backend.arn
+        container_name = "backend-container"
       }
     }
   }
@@ -127,4 +124,93 @@ module "ecs" {
   create_security_group     = false
   create_task_exec_iam_role = true
   create_task_exec_policy   = true
+
+  create_cloudwatch_log_group = false
 }
+
+module "ecs_monitoring" {
+  source  = "terraform-aws-modules/ecs/aws"
+  version = ">= 7.5.0"
+
+  cluster_name               = "todo-app-cluster"
+  cluster_capacity_providers = ["FARGATE_SPOT"]
+
+  services = {
+    monitoring-task = {
+      cpu           = 256
+      memory        = 512
+      desired_count = 1
+
+      container_definitions = {
+        prometheus-container = {
+          image     = "${module.prom_repo.repository_url}:latest"
+          essential = true
+
+          portMappings = [{
+            name          = "prometheus-container"
+            containerPort = 9090
+            protocol      = "tcp"
+          }]
+        }
+
+        grafana-container = {
+          image     = "${module.graf_repo.repository_url}:latest"
+          essential = true
+
+          portMappings = [{
+            name          = "grafana-container"
+            containerPort = 6060
+            protocol      = "tcp"
+          }]
+
+          environment = [{
+            name  = "GF_SERVER_HTTP_PORT"
+            value = "6060"
+          }]
+        }
+      }
+
+      security_group_ids = [module.monitoring_sg.security_group_id]
+      subnet_ids         = var.private_subnets
+      assign_public_ip   = false
+
+      load_balancer = {
+        service = {
+          target_group_arn = var.alb_tg["tg-grafana"].arn
+          container_name   = "grafana-container"
+          container_port   = 6060
+        }
+      }
+      network_mode = "awsvpc"
+    }
+  }
+
+  create_security_group     = false
+  create_task_exec_iam_role = true
+  create_task_exec_policy   = true
+
+  create_cloudwatch_log_group = false
+}
+
+# Discovery for monitoring
+resource "aws_service_discovery_private_dns_namespace" "main" {
+  name        = "todo.local"
+  description = "Service discovery for to-do app"
+  vpc         = var.vpc
+}
+
+resource "aws_service_discovery_service" "backend" {
+  name = "backend-discovery"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.main.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+}
+
