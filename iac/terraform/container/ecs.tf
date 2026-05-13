@@ -181,8 +181,8 @@ module "ecs_monitoring" {
               value = "6060"
             },
             {
-              name  = "GF_AUTH_ANONYMOUS_ORG_ROLE",
-              value = "Admin"
+              name = "GF_AUTH_ANONYMOUS_ENABLED"
+              value = "true"
             },
             {
               name  = "GF_SERVER_ROOT_URL",
@@ -193,6 +193,11 @@ module "ecs_monitoring" {
               value = "true"
             }
           ]
+
+          secrets = [{
+            name      = "GF_SECURITY_ADMIN_PASSWORD"
+            valueFrom = "arn:aws:secretsmanager:us-east-2:131912109503:secret:grafana-admin-password-dQuIPo:GF_SECURITY_ADMIN_PASSWORD::"
+          }]
         }
       }
 
