@@ -1,4 +1,4 @@
-# DevOps To-Do List Web App
+# 📋 DevOps To-Do List Web App
 
 Welcome to my DevOps playground! This is a simple To-Do list web application built specifically to practice, develop, and refine my SDLC, Cloud, and Infrastructure engineering skills. 
 
@@ -6,7 +6,7 @@ While the application itself is a straightforward To-Do tracker with authenticat
 
 ---
 
-## Project Status & Important Notes
+## ⚠️ Project Status & Important Notes
 
 * **Work in Progress:** This is an active, ongoing project. You will likely see active refactoring, code cleaning, and bug fixing happening as I continue to build and learn.
 * **Budget Constraints:** This architecture is built utilizing the AWS Free Tier and promotional credits. Because of these strict cost limitations, certain critical production elements such as highly available multi-AZ deployments, advanced security layers, and comprehensive logging may be compromised or scaled back, despite known best practices.
