@@ -40,6 +40,11 @@ module "ecs" {
       tasks_iam_role_policies = {
         files_policy = var.todo_files_policy
       }
+
+      deployment_circuit_breaker = {
+        enable   = true
+        rollback = false
+      }
     }
 
     todo-backend-task = {
@@ -115,8 +120,13 @@ module "ecs" {
       }
 
       service_registries = {
-        registry_arn = aws_service_discovery_service.backend.arn
+        registry_arn   = aws_service_discovery_service.backend.arn
         container_name = "backend-container"
+      }
+
+      deployment_circuit_breaker = {
+        enable   = true
+        rollback = false
       }
     }
   }
@@ -132,19 +142,20 @@ module "ecs_monitoring" {
   source  = "terraform-aws-modules/ecs/aws"
   version = ">= 7.5.0"
 
-  cluster_name               = "todo-app-cluster"
+  cluster_name               = "todo-mno-cluster"
   cluster_capacity_providers = ["FARGATE_SPOT"]
 
   services = {
-    monitoring-task = {
+    todo-mno-task = {
       cpu           = 256
       memory        = 512
       desired_count = 1
 
       container_definitions = {
         prometheus-container = {
-          image     = "${module.prom_repo.repository_url}:latest"
-          essential = true
+          image                  = "${module.prom_repo.repository_url}:latest"
+          essential              = true
+          readonlyRootFilesystem = false
 
           portMappings = [{
             name          = "prometheus-container"
@@ -154,8 +165,9 @@ module "ecs_monitoring" {
         }
 
         grafana-container = {
-          image     = "${module.graf_repo.repository_url}:latest"
-          essential = true
+          image                  = "${module.graf_repo.repository_url}:latest"
+          essential              = true
+          readonlyRootFilesystem = false
 
           portMappings = [{
             name          = "grafana-container"
@@ -163,10 +175,24 @@ module "ecs_monitoring" {
             protocol      = "tcp"
           }]
 
-          environment = [{
-            name  = "GF_SERVER_HTTP_PORT"
-            value = "6060"
-          }]
+          environment = [
+            {
+              name  = "GF_SERVER_HTTP_PORT"
+              value = "6060"
+            },
+            {
+              name  = "GF_AUTH_ANONYMOUS_ORG_ROLE",
+              value = "Admin"
+            },
+            {
+              name  = "GF_SERVER_ROOT_URL",
+              value = "https://onlytodo.xyz/grafana/"
+            },
+            {
+              name  = "GF_SERVER_SERVE_FROM_SUB_PATH",
+              value = "true"
+            }
+          ]
         }
       }
 
@@ -182,6 +208,11 @@ module "ecs_monitoring" {
         }
       }
       network_mode = "awsvpc"
+
+      deployment_circuit_breaker = {
+        enable   = true
+        rollback = false
+      }
     }
   }
 
