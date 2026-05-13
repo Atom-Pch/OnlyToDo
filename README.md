@@ -1,31 +1,42 @@
-# A simple to-do list web app
+# DevOps To-Do List Web App
 
-A project to develop my DevOps skills!
+Welcome to my DevOps playground! This is a simple To-Do list web application built specifically to practice, develop, and refine my SDLC, Cloud, and Infrastructure engineering skills. 
 
-## These are tech stacks that I use on this project
-### Web development
-- Sveltekit
-- Go
+While the application itself is a straightforward To-Do tracker with authentication, the primary focus of this repository is the pipeline, infrastructure, and deployment architecture behind the scenes.
+
+---
+
+## Project Status & Important Notes
+
+* **Work in Progress:** This is an active, ongoing project. You will likely see active refactoring, code cleaning, and bug fixing happening as I continue to build and learn.
+* **Budget Constraints:** This architecture is built utilizing the AWS Free Tier and promotional credits. Because of these strict cost limitations, certain critical production elements—such as highly available multi-AZ deployments, advanced security layers, and comprehensive logging—may be compromised or scaled back, despite my awareness of industry best practices.
+* **Known Anti-Patterns:** For the same cost-saving reasons mentioned above, you may spot some architectural anti-patterns that would normally be avoided in a true enterprise production environment.
+* **Evolving Tech Stack:** The tools listed below represent the current state of the project. Tools may be removed, swapped, or added as the project evolves. **(Note: Kubernetes is next on the roadmap and will be added soon!)**
+
+---
+
+## 🛠️ Current Tech Stack
+
+### Web Development
+* **Frontend:** SvelteKit
+* **Backend:** Go
 
 ### Database
-- PostgreSQL
+* **RDBMS:** PostgreSQL
 
-### Containerisation
-- Docker
+### Containerization & Orchestration
+* **Containers:** Docker
+* **Orchestration:** Kubernetes *(Coming Soon!)*
 
-### Testing
-- Playwright
+### Infrastructure & Configuration
+* **Cloud Provider:** AWS
+* **Infrastructure as Code (IaC):** Terraform
+* **Configuration Management:** Ansible
 
-### Infrastructure as Code
-- Terraform
-- Ansible
-
-### Cloud Provider
-- AWS
-
-### CI/CD
-- Gitlab CI/CD
+### CI/CD & Testing
+* **Pipeline:** GitLab CI/CD
+* **Testing:** Playwright (E2E Testing)
 
 ### Monitoring & Observability
-- Prometheus
-- Grafana
+* **Metrics:** Prometheus
+* **Dashboards:** Grafana
