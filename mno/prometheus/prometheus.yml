@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'backend'
+    dns_sd_configs:
+      - names:
+          - 'backend-discovery.todo.local.todo.local'
+        type: 'A'
+        port: 8080
