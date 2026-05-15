@@ -10,7 +10,6 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
     - if: $CI_PIPELINE_SOURCE == "schedule"
-    - when: never
 
 variables:
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitLabCICDRole"
@@ -62,7 +61,6 @@ initialize_infrastructure:
   stage: infra_init
   image: hashicorp/terraform:1.14
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "schedule" && $DAILY_ACTION == "up"
   <<: *aws_oidc_auth
   before_script:
@@ -79,7 +77,9 @@ build_and_push_images_latest:
   stage: img_push
   image: docker:29.4.1-alpine3.23
   rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $DAILY_ACTION == "up"
   services:
     - docker:29.4.1-dind-alpine3.23
   <<: *aws_oidc_auth
@@ -204,8 +204,6 @@ destroy_infrastructure:
   stage: all_destroy
   image: hashicorp/terraform:1.14
   rules:
-    - if: $CI_PIPELINE_SOURCE == "web"
-      when: manual
     - if: $CI_PIPELINE_SOURCE == "schedule" && $DAILY_ACTION == "down"
   <<: *aws_oidc_auth
   before_script:
