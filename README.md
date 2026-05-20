@@ -34,10 +34,10 @@ While the application itself is a straightforward To-Do tracker with authenticat
 ### Infrastructure & Configuration
 * **Cloud Provider:** AWS
 * **Infrastructure as Code (IaC):** Terraform
-* **Configuration Management:** Ansible
+* ~~**Configuration Management:** Ansible~~ *(Moved into CI/CD pipeline)*
 
 ### CI/CD & Testing
-* **Pipeline:** GitLab CI/CD
+* **Pipeline:** ~~GitLab CI/CD~~ GitHub Actions
 * **Testing:** Playwright (E2E Testing)
 
 ### Monitoring & Observability
