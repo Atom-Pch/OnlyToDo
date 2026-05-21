@@ -32,11 +32,11 @@ spec:
           # Resource Requests and Limits
           resources:
             requests:
+              memory: 64M
+              cpu: 128m
+            limits:
               memory: 128M
               cpu: 256m
-            limits:
-              memory: 256M
-              cpu: 512m
 
           env:
             # We hardcode these for local Minikube testing.
