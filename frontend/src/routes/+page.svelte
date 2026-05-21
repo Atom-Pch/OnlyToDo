@@ -166,8 +166,8 @@
 		</div>
 	</div>
 	<footer class="mt-16 pt-8 border-t border-gray-800 flex flex-col items-center justify-center pb-8">
-		<p class="text-gray-500 text-sm mb-4">Built as a DevOps CI/CD and Infrastructure Practice Project</p>
-		
+		<p class="text-gray-500 text-sm mb-4">Built as a full DevOps Project</p>
+
 		<a 
 			href="https://github.com/Atom-Pch/TodoWebApp" 
 			target="_blank" 
