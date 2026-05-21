@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          # In Minikube, we use the local image we build
+          image: todo-backend:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: 128M
+              cpu: 256m
+            limits:
+              memory: 256M
+              cpu: 512m
+          env:
+            # We hardcode these for local Minikube testing.
+            # Later for EKS, we will move these to ConfigMaps and Secrets!
+            - name: DB_HOST
+              value: "database" # This will be the name of your Postgres K8s Service
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: "atom"
+            - name: DB_PASS
+              value: "atom"
+            - name: DB_NAME
+              value: "todo_db"
+            - name: JWT_TOKEN
+              value: "local-dev-jwt-secret"
+            - name: S3_BUCKET_NAME
+              value: "my-local-bucket" # Mock
+            - name: AWS_REGION
+              value: "us-east-2"
+            - name: PORT
+              value: "8080"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP # ClusterIP means it's only accessible from inside the K8s cluster
