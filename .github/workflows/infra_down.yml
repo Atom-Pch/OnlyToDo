@@ -8,7 +8,9 @@ on:
 
 env:
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitHubActionsRole"
+  PORKBUN_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
   AWS_REGION: "us-east-2"
+  PARK_DOMAIN: "pixie.porkbun.com"
 
 permissions:
   id-token: write
@@ -36,3 +38,17 @@ jobs:
         run: |
           terraform init
           terraform destroy -auto-approve
+
+      - name: Park Domain
+        run: |
+          echo "Fetching Porkbun Secrets..."
+          PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $PORKBUN_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
+          export PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
+
+          echo "Updating DNS Record for ALB..."
+          curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
+            -H "Content-Type: application/json" \
+            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$PARK_DOMAIN\", \"ttl\": \"600\" }" \
+            > /dev/null
+          echo "Domain Parked Successfully."
