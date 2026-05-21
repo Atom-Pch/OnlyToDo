@@ -66,13 +66,13 @@ spec:
               path: /
               port: 8080
             initialDelaySeconds: 10
-            periodSeconds: 5
+            periodSeconds: 30
           livenessProbe:
             httpGet:
               path: /
               port: 8080
             initialDelaySeconds: 10
-            periodSeconds: 5
+            periodSeconds: 30
 
 ---
 apiVersion: v1
