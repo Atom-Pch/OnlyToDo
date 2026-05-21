@@ -2,7 +2,8 @@ name: Infra - Morning Startup
 
 on:
   schedule:
-    - cron: "30 2 * * *" # Morning: 9:30 AM BKK
+    - cron: "27 9 * * *"
+      timezone: "Asia/Bangkok"
   workflow_dispatch:
 
 env:
