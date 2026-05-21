@@ -41,11 +41,13 @@ func main() {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("Failed to open database connection: %v", err)
+		return
 	}
 	defer db.Close()
 
 	if err := db.Ping(); err != nil {
 		log.Printf("Warning: Database ping failed: %v", err)
+		return
 	} else {
 		log.Println("Successfully connected to PostgreSQL!")
 		var v string
