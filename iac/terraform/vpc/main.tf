@@ -60,7 +60,7 @@ resource "aws_vpc_endpoint" "s3" {
   }
 }
 
-resource "aws_vpc_endpoint" "ecr-dkr" {
+resource "aws_vpc_endpoint" "ecr_dkr" {
   vpc_id             = module.vpc.vpc_id
   service_name       = "com.amazonaws.${var.aws_region}.ecr.dkr"
   vpc_endpoint_type  = "Interface"
@@ -74,7 +74,7 @@ resource "aws_vpc_endpoint" "ecr-dkr" {
   }
 }
 
-resource "aws_vpc_endpoint" "ecr-api" {
+resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id             = module.vpc.vpc_id
   service_name       = "com.amazonaws.${var.aws_region}.ecr.api"
   vpc_endpoint_type  = "Interface"
