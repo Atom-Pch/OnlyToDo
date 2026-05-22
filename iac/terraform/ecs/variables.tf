@@ -1,0 +1,13 @@
+variable "alb_sg" {}
+variable "vpc" {}
+variable "private_subnets" {}
+variable "alb_tg" {}
+variable "s3_files_name" {}
+variable "db_address" {}
+variable "rds_secret_arn" {}
+variable "todo_app_secret_arn" {}
+variable "s3_files_arn" {}
+variable "frontend_repo" {}
+variable "backend_repo" {}
+variable "prom_repo" {}
+variable "graf_repo" {}

@@ -1,3 +1,63 @@
+resource "aws_db_subnet_group" "this" {
+  name        = "todo-db-subnet-group"
+  description = "subnet group for todo DB"
+
+  subnet_ids = var.private_subnets
+}
+
+module "rds" {
+  source  = "terraform-aws-modules/rds/aws"
+  version = ">= 7.2.0"
+
+  vpc_security_group_ids = [
+    module.rds_sg.security_group_id, aws_security_group.ssm_rds_sg.id
+  ]
+
+  identifier        = "todo-db"
+  allocated_storage = 20
+  storage_type      = "gp2"
+  engine            = "postgres"
+  engine_version    = "18.2"
+  instance_class    = "db.t3.micro"
+  username          = "atom"
+  db_name           = "todo_db"
+
+  family               = "postgres18"
+  major_engine_version = "18.0"
+
+  publicly_accessible = false
+
+  db_subnet_group_name = aws_db_subnet_group.this.name
+
+  skip_final_snapshot                                    = true
+  manage_master_user_password                            = true
+  manage_master_user_password_rotation                   = true
+  master_user_password_rotate_immediately                = false
+  master_user_password_rotation_automatically_after_days = 30
+}
+
+# SECURITY GROUP #
+module "rds_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = ">= 5.3.1"
+
+  name        = "todo-rds-sg"
+  description = "Allow todo RDS service to receive connections from backend and local"
+  vpc_id      = var.vpc
+
+  ingress_with_source_security_group_id = [
+    {
+      rule                     = "postgresql-tcp"
+      description              = "ALB port",
+      source_security_group_id = var.backend_sg
+    }
+  ]
+
+  egress_rules       = ["all-tcp"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
+}
+
+### SSM ###
 data "aws_ami" "ubuntu" {
   most_recent = true
 
@@ -14,7 +74,7 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"]
 }
 
-# 2. Base Security Groups
+# Base Security Groups
 resource "aws_security_group" "bastion_sg" {
   name        = "ssm-bastion-sg"
   description = "Security Group for SSM Bastion Host"
@@ -27,8 +87,7 @@ resource "aws_security_group" "ssm_rds_sg" {
   vpc_id      = var.vpc
 }
 
-# 3. Security Group Rules (Decoupled to prevent dependency cycles)
-
+# Security Group Rules (Decoupled to prevent dependency cycles)
 # Bastion Egress: Allow outbound connection to RDS
 resource "aws_security_group_rule" "bastion_egress_rds" {
   type                     = "egress"

@@ -13,7 +13,7 @@ module "ecs" {
 
       container_definitions = {
         frontend-container = {
-          image     = "${module.frontend_repo.repository_url}:latest"
+          image     = "${var.frontend_repo}:latest"
           essential = true
 
           portMappings = [{
@@ -38,7 +38,7 @@ module "ecs" {
       assign_public_ip   = false
 
       tasks_iam_role_policies = {
-        files_policy = var.todo_files_policy
+        files_policy = aws_iam_policy.S3_todo_files.arn
       }
 
       deployment_circuit_breaker = {
@@ -54,7 +54,7 @@ module "ecs" {
 
       container_definitions = {
         backend-container = {
-          image     = "${module.backend_repo.repository_url}:latest"
+          image     = "${var.backend_repo}:latest"
           essential = true
 
           portMappings = [{
@@ -113,7 +113,7 @@ module "ecs" {
       assign_public_ip   = false
 
       tasks_iam_role_policies = {
-        files_policy = var.todo_files_policy
+        files_policy = aws_iam_policy.S3_todo_files.arn
       }
 
       task_exec_iam_role_policies = {
@@ -154,7 +154,7 @@ module "ecs_monitoring" {
 
       container_definitions = {
         prometheus-container = {
-          image                  = "${module.prom_repo.repository_url}:latest"
+          image                  = "${var.prom_repo}:latest"
           essential              = true
           readonlyRootFilesystem = false
 
@@ -166,7 +166,7 @@ module "ecs_monitoring" {
         }
 
         grafana-container = {
-          image                  = "${module.graf_repo.repository_url}:latest"
+          image                  = "${var.graf_repo}:latest"
           essential              = true
           readonlyRootFilesystem = false
 
@@ -233,7 +233,7 @@ module "ecs_monitoring" {
   create_cloudwatch_log_group = false
 }
 
-# For secrets retrieval
+# IAM POLiCIES
 resource "aws_iam_policy" "get_backend_secrets" {
   name        = "BackendSecretAccess"
   description = "Allow backend service to access secrets"
@@ -275,6 +275,29 @@ resource "aws_iam_policy" "mno_secret" {
   })
 }
 
+resource "aws_iam_policy" "S3_todo_files" {
+  name        = "S3TodoFiles"
+  description = "Allow services to get/put/del files from S3 for todo app"
+
+  policy = jsonencode({
+    Version : "2012-10-17",
+    Statement : [
+      {
+        Action : [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        Effect : "Allow",
+        Resource : [
+          "${var.s3_files_arn}",
+          "${var.s3_files_arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
 # Discovery for monitoring
 resource "aws_service_discovery_private_dns_namespace" "main" {
   name        = "todo.local"
@@ -295,4 +318,78 @@ resource "aws_service_discovery_service" "backend" {
 
     routing_policy = "MULTIVALUE"
   }
+}
+
+### SECURITY GROUP ###
+module "frontend_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = ">= 5.3.1"
+
+  name        = "todo-frontend-service-sg"
+  description = "Allow todo frontend service to receive connections from ALB"
+  vpc_id      = var.vpc
+
+  ingress_with_source_security_group_id = [
+    {
+      from_port                = 3000
+      to_port                  = 3000
+      protocol                 = "tcp"
+      description              = "Frontend port"
+      source_security_group_id = var.alb_sg
+    }
+  ]
+
+  egress_rules       = ["all-tcp"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
+}
+
+module "backend_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = ">= 5.3.1"
+
+  name        = "todo-backend-service-sg"
+  description = "Allow todo backend service to receive connections from ALB"
+  vpc_id      = var.vpc
+
+  ingress_with_source_security_group_id = [
+    {
+      from_port                = 8080
+      to_port                  = 8080
+      protocol                 = "tcp"
+      description              = "Backend port"
+      source_security_group_id = var.alb_sg
+    },
+    {
+      from_port                = 8080
+      to_port                  = 8080
+      protocol                 = "tcp"
+      description              = "Allow Prometheus to scrape backend metrics"
+      source_security_group_id = module.monitoring_sg.security_group_id
+    }
+  ]
+
+  egress_rules       = ["all-tcp"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
+}
+
+module "monitoring_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = ">= 5.3.1"
+
+  name        = "todo-mno-sg"
+  description = "Security group for Prometheus and Grafana"
+  vpc_id      = var.vpc
+
+  ingress_with_source_security_group_id = [
+    {
+      from_port                = 6060
+      to_port                  = 6060
+      protocol                 = "tcp"
+      description              = "Allow ALB to Grafana"
+      source_security_group_id = var.alb_sg
+    }
+  ]
+
+  egress_rules       = ["all-tcp"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
 }

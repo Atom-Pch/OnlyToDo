@@ -1,3 +1,4 @@
+# APPLICATION LOAD BALANCER
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = ">= 10.5.0"
@@ -101,5 +102,22 @@ module "alb" {
 resource "aws_ssm_parameter" "alb_dns" {
   name  = "/todo/config/alb_dns"
   type  = "String"
-  value = module.alb.dns_name 
+  value = module.alb.dns_name
+}
+
+
+# SECURITY GROUP
+module "alb_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = ">= 5.3.1"
+
+  name        = "todo-alb-sg"
+  description = "Allow todo ALB to receive connections from the internet"
+  vpc_id      = var.vpc
+
+  ingress_rules       = ["http-80-tcp", "https-443-tcp"]
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+
+  egress_rules       = ["all-tcp"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
 }
