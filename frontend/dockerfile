@@ -3,7 +3,7 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-RUN npm ci
+RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
