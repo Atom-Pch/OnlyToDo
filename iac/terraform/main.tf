@@ -71,10 +71,10 @@ module "ecs" {
   todo_app_secret_arn = var.todo-app-secret-arn
   s3_files_arn        = module.s3.s3_files_arn
 
-  frontend_repo = module.ecr.frontend_repo_name
-  backend_repo  = module.ecr.backend_repo_name
-  prom_repo     = module.ecr.prom_repo_name
-  graf_repo     = module.ecr.graf_repo_name
+  frontend_repo = module.ecr.frontend_repo_url
+  backend_repo  = module.ecr.backend_repo_url
+  prom_repo     = module.ecr.prom_repo_url
+  graf_repo     = module.ecr.graf_repo_url
 }
 
 module "s3" {
