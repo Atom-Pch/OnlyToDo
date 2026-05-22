@@ -2,7 +2,7 @@ name: Infra - Evening Teardown
 
 on:
   schedule:
-    - cron: "33 16 * * *" # Evening: 17:30 PM BKK
+    - cron: "27 16 * * *" # Evening: 17:30 PM BKK
       timezone: "Asia/Bangkok"
   workflow_dispatch:
 
