@@ -1,218 +1,44 @@
-# stages:
-#   - infra_init
-#   - e2e_test
-#   - img_push
-#   - app_init
-#   - all_destroy
+stages:
+  - infra_create
+  - infra_destroy
 
-# workflow:
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "web"
-#     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
-#     - if: $CI_PIPELINE_SOURCE == "schedule"
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
 
-# variables:
-#   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitLabCICDRole"
-#   PORKBUN_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
-#   AWS_ACCOUNT_ID: "131912109503"
-#   RDS_ENDPOINT: "todo-db.c962yekmm5ja.us-east-2.rds.amazonaws.com"
-#   AWS_REGION: "us-east-2"
-#   DB_NAME: "todo_db"
-#   DB_PORT: 5432
-#   SQL_FILE: "database/init.sql"
-#   CORE_TABLE_NAME: "users"
-#   FRONTEND_REPO: "todo-frontend-repo"
-#   BACKEND_REPO: "todo-backend-repo"
-#   PROMETHEUS_REPO: "todo-prom-repo"
-#   GRAFANA_REPO: "todo-graf-repo"
+variables:
+  GITHUB_USER: "Atom-Pch"
+  GITHUB_REPO: "TodoWebApp"
 
-# .aws_oidc_auth: &aws_oidc_auth
-#   id_tokens:
-#     GITLAB_OIDC_TOKEN:
-#       aud: https://gitlab.com # Update if using a self-hosted GitLab instance
-#   before_script:
-#     - echo "${GITLAB_OIDC_TOKEN}" > /tmp/web_identity_token
-#     - export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/web_identity_token
+morning_infra_create:
+  stage: infra_create
+  image: curlimages/curl:8.20.0
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $ACTION == "up"
+  script: |
+    - echo "Triggering GitHub Actions: Morning Startup..."
+    - |
+      curl -L \
+        -X POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer $GITHUB_PAT" \
+        -H "X-GitHub-Api-Version: 2026-03-10" \
+        https://api.github.com/repos/$GITHUB_USER/$GITHUB_REPO/actions/workflows/infra_up.yml/dispatches \
+        -d '{"ref":"main"}'
 
-# # ---------------------------------------------------------
-# # STAGE: PLAYWRIGHT END-TO-END TEST
-# # ---------------------------------------------------------
-# run_playwright_tests:
-#   stage: e2e_test
-#   image: mcr.microsoft.com/playwright:v1.59.0-noble
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
-#   before_script:
-#     - cd frontend/tests/ # Or wherever your tests live
-#   script:
-#     - npm ci
-#     - npx playwright install --with-deps
-#     - npm run test:e2e
-#   artifacts:
-#     when: always
-#     paths:
-#       - frontend/test-results/ # Saves test results so you can view them in GitLab
-#     expire_in: 1 day
-
-# # ---------------------------------------------------------
-# # STAGE: INITIALIZE INFRASTRUCTURE
-# # ---------------------------------------------------------
-# initialize_infrastructure:
-#   stage: infra_init
-#   image: 
-#     name: hashicorp/terraform:1.14
-#     entrypoint: [""]
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "schedule" && $DAILY_ACTION == "up"
-#   <<: *aws_oidc_auth
-#   before_script:
-#     - !reference [.aws_oidc_auth, before_script] # Cleanly imports the OIDC token setup
-#     - cd iac/terraform/
-#   script:
-#     - terraform init
-#     - terraform apply -auto-approve
-
-# # ---------------------------------------------------------
-# # STAGE: BUILD AND PUSH IMAGES TO ECR
-# # ---------------------------------------------------------
-# build_and_push_images_latest:
-#   stage: img_push
-#   image: docker:29.4.1-alpine3.23
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "web"
-#     - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
-#     - if: $CI_PIPELINE_SOURCE == "schedule" && $DAILY_ACTION == "up"
-#   services:
-#     - docker:29.4.1-dind-alpine3.23
-#   <<: *aws_oidc_auth
-#   script:
-#     - apk add --no-cache aws-cli
-#     - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-
-#     # FRONTEND image
-#     - docker build --provenance=false -t $FRONTEND_REPO ./frontend/
-#     - docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
-#     - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
-
-#     # BACKEND image
-#     - docker build --provenance=false -t $BACKEND_REPO ./backend/
-#     - docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
-#     - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
-
-#     # PROMETHEUS image
-#     - docker build --provenance=false -t $PROMETHEUS_REPO ./mno/prometheus/
-#     - docker tag $PROMETHEUS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$PROMETHEUS_REPO:latest
-#     - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$PROMETHEUS_REPO:latest
-
-#     # GRAFANA image
-#     - docker build --provenance=false -t $GRAFANA_REPO ./mno/grafana/
-#     - docker tag $GRAFANA_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
-#     - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
-
-# # ---------------------------------------------------------
-# # STAGE: APP SETUP FOR RDS AND ALB
-# # ---------------------------------------------------------
-# initialize_app:
-#   stage: app_init
-#   image: ubuntu:22.04
-#   <<: *aws_oidc_auth
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "web"
-#     - if: $CI_PIPELINE_SOURCE == "schedule" && $DAILY_ACTION == "up"
-#   before_script:
-#     - !reference [.aws_oidc_auth, before_script] # Cleanly imports the OIDC token setup
-#     - export DEBIAN_FRONTEND=noninteractive
-#     - apt-get update && apt-get install -y curl unzip jq postgresql-client netcat-openbsd lsof
-
-#     # 1. Install AWS CLI v2
-#     - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-#     - unzip -q awscliv2.zip && ./aws/install
-
-#     # 2. Install AWS SSM Session Manager Plugin
-#     - curl -sL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
-#     - dpkg -i session-manager-plugin.deb
-
-#   script:
-#     # GET parameters and secrets
-#     - echo "Fetching ALB DNS from SSM..."
-#     - export ALB_DNS=$(aws ssm get-parameter --name "/todo/config/alb_dns" --region $AWS_REGION --query "Parameter.Value" --output text)
-
-#     - echo "Fetching Porkbun Secrets..."
-#     - PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $PORKBUN_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-#     - export PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
-#     - export PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
-
-#     - echo "Fetching Dynamic IDs from SSM Parameter Store..."
-#     - export EC2_INSTANCE_ID=$(aws ssm get-parameter --name "/todo/config/bastion_ec2_id" --region $AWS_REGION --query "Parameter.Value" --output text)
-#     - export DB_SECRET_ARN=$(aws ssm get-parameter --name "/todo/config/db_secret_arn" --region $AWS_REGION --query "Parameter.Value" --output text)
-
-#     - echo "Fetching DB Credentials via Lookup..."
-#     - SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-#     - DB_USER=$(echo $SECRET_JSON | jq -r .username)
-#     - DB_PASS=$(echo $SECRET_JSON | jq -r .password)
-
-#     # UPDATE Porkbun DNS to point to ALB
-#     - echo "Updating DNS Record for ALB..."
-#     - |
-#       curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
-#         -H "Content-Type: application/json" \
-#         -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }" \
-#         > /dev/null
-#     - echo "ALB DNS Updated Successfully."
-#     # INIT SSM to RDS
-#     - echo "Establishing SSM Tunnel (Background)..."
-#     - |
-#       aws ssm start-session \
-#         --target "$EC2_INSTANCE_ID" \
-#         --document-name AWS-StartPortForwardingSessionToRemoteHost \
-#         --parameters host="$RDS_ENDPOINT",portNumber="$DB_PORT",localPortNumber="$DB_PORT" \
-#         --region "$AWS_REGION" > /dev/null 2>&1 &
-#     - TUNNEL_PID=$!
-#     - echo "Waiting for tunnel to stabilize..."
-#       # Loops until it can successfully reach port 5432 on localhost, or gives up after ~30 seconds
-#     - for i in {1..15}; do nc -z 127.0.0.1 $DB_PORT && break || sleep 2; done
-
-#     # CREATE DB if not exists
-#     - echo "Checking if Core Table exists in Database..."
-#     - export PGPASSWORD=$DB_PASS
-#     - |
-#       TABLE_EXISTS=$(psql -h 127.0.0.1 -p $DB_PORT -U "$DB_USER" -d "$DB_NAME" -tAc "
-#         SELECT EXISTS (
-#           SELECT FROM information_schema.tables 
-#           WHERE table_schema = 'public' 
-#           AND table_name = '$CORE_TABLE_NAME'
-#         );
-#       ")
-
-#     - |
-#       if [ "$TABLE_EXISTS" = "f" ]; then
-#         echo "Database was empty. Applying initialization script..."
-#         psql -h 127.0.0.1 -p $DB_PORT -U "$DB_USER" -d "$DB_NAME" -f $SQL_FILE
-#         echo "Initialization script applied successfully."
-#       else
-#         echo "Table '$CORE_TABLE_NAME' found. Database is already initialized. Skipping."
-#       fi
-
-#   after_script:
-#     - echo "Tearing down SSM Tunnel..."
-#       # Failsafe cleanup: find whatever process is holding 5432 and kill it
-#     - PORT_PID=$(lsof -t -i:$DB_PORT || echo "")
-#     - if [ -n "$PORT_PID" ]; then kill -9 $PORT_PID; fi
-
-# # ---------------------------------------------------------
-# # STAGE: DESTROY INFRASTRUCTURE
-# # ---------------------------------------------------------
-# destroy_infrastructure:
-#   stage: all_destroy
-#   image: 
-#     name: hashicorp/terraform:1.14
-#     entrypoint: [""]
-#   rules:
-#     - if: $CI_PIPELINE_SOURCE == "schedule" && $DAILY_ACTION == "down"
-#   <<: *aws_oidc_auth
-#   before_script:
-#     - !reference [.aws_oidc_auth, before_script] # Cleanly imports the OIDC token setup
-#     - cd iac/terraform/
-#   script:
-#     - terraform init
-#     - terraform destroy -auto-approve
+evening_infra_destroy:
+  stage: infra_destroy
+  image: curlimages/curl:8.20.0
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $ACTION == "down"
+  script: |
+    - echo "Triggering GitHub Actions: Evening Teardown..."
+    - |
+      curl -L \
+        -X POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer $GITHUB_PAT" \
+        -H "X-GitHub-Api-Version: 2026-03-10" \
+        https://api.github.com/repos/$GITHUB_USER/$GITHUB_REPO/actions/workflows/infra_down.yml/dispatches \
+        -d '{"ref":"main"}'

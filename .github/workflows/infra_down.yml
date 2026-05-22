@@ -1,9 +1,6 @@
 name: Infra - Evening Teardown
 
 on:
-  schedule:
-    - cron: "27 16 * * *"
-      timezone: "Asia/Bangkok"
   workflow_dispatch:
 
 env:
