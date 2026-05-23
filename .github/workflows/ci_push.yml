@@ -3,6 +3,7 @@ name: CI - Test & Build
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 env:
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitHubActionsRole"
