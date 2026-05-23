@@ -11,6 +11,13 @@ module "vpc" {
   public_subnets  = ["10.0.0.0/24", "10.0.1.0/24"]
   private_subnets = ["10.0.8.0/24", "10.0.9.0/24"]
 
+  public_subnet_tags = {
+    "kubernetes.io/role/elb" = 1
+  }
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb" = 1
+  }
+
   public_subnet_names  = ["todo-subnet-public1-us-east-2a", "todo-subnet-public2-us-east-2b"]
   private_subnet_names = ["todo-subnet-private1-us-east-2a", "todo-subnet-private2-us-east-2b"]
 
@@ -34,8 +41,7 @@ module "vpc" {
   create_flow_log_cloudwatch_iam_role  = false
 }
 
-
-# VPC ENDPOINTS
+# SECURITY GROUP
 module "vpce_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = ">= 5.3.1"
@@ -46,8 +52,12 @@ module "vpce_sg" {
 
   ingress_rules       = ["https-443-tcp"]
   ingress_cidr_blocks = [var.vpc_cidr]
+
+  egress_rules       = ["all-tcp"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
 }
 
+# VPC ENDPOINTS
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = module.vpc.vpc_id
   service_name      = "com.amazonaws.${var.aws_region}.s3"
@@ -156,4 +166,52 @@ resource "aws_vpc_endpoint" "ec2_msg" {
   tags = {
     Name = "todo-vpce-ec2msg"
   }
+}
+
+resource "aws_vpc_endpoint" "sts" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.aws_region}.sts"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [module.vpce_sg.security_group_id]
+
+  tags = {
+    Name = "todo-vpce-sts"
+  }
+}
+
+resource "aws_vpc_endpoint" "ec2" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.aws_region}.ec2"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [module.vpce_sg.security_group_id]
+
+  tags = {
+    Name = "todo-vpce-ec2"
+  }
+}
+
+resource "aws_vpc_endpoint" "eks" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.aws_region}.eks"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [module.vpce_sg.security_group_id]
+
+  tags = { Name = "todo-vpce-eks" }
+}
+
+resource "aws_vpc_endpoint" "autoscaling" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.aws_region}.autoscaling"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [module.vpce_sg.security_group_id]
+
+  tags = { Name = "todo-vpce-autoscaling" }
 }

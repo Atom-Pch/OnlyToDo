@@ -1,2 +1,2 @@
 variable "aws_region" {}
-variable "alb_dns" {}
+variable "app_dns" {}
