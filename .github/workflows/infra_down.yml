@@ -7,7 +7,7 @@ env:
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitHubActionsRole"
   PORKBUN_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
   AWS_REGION: "us-east-2"
-  PARK_DOMAIN: "pixie.porkbun.com"
+  PARK_DOMAIN: "onlytodo.xyz.s3-website.us-east-2.amazonaws.com"
 
 permissions:
   id-token: write
