@@ -2,7 +2,7 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = ">= 21.20.0"
 
-  name               = "todo-eks-cluster"
+  name               = "todo-cluster"
   kubernetes_version = "1.35"
 
   vpc_id                   = var.vpc
@@ -46,4 +46,5 @@ module "eks" {
   }
 
   deletion_protection = false
+  cloudwatch_log_group_retention_in_days = 1
 }

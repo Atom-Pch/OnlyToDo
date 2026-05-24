@@ -45,13 +45,8 @@ module "rds_sg" {
   description = "Allow todo RDS service to receive connections from backend and local"
   vpc_id      = var.vpc
 
-  # ingress_with_source_security_group_id = [
-  #   {
-  #     rule                     = "postgresql-tcp"
-  #     description              = "ALB port",
-  #     source_security_group_id = var.eks_sg
-  #   }
-  # ]
+  ingress_rules       = "postgresql-tcp"
+  ingress_cidr_blocks = var.vpc_cidr
 
   egress_rules       = ["all-tcp"]
   egress_cidr_blocks = ["0.0.0.0/0"]

@@ -32,17 +32,16 @@ module "vpc" {
   source = "./vpc"
 
   aws_region = var.aws_region
-  vpc_cidr   = "10.0.0.0/20"
+  vpc_cidr   = var.vpc_cidr
   ssm_rds_sg = module.rds.ssm_rds_sg
 }
 
 module "rds" {
   source = "./rds"
 
-  # backend_sg      = module.ecs.backend_sg
   vpc             = module.vpc.vpc
   private_subnets = module.vpc.private_subnets
-  # eks_sg = "dummy" # REPLACE
+  vpc_cidr        = var.vpc_cidr
 }
 
 module "ecr" {
