@@ -23,7 +23,6 @@ permissions:
 
 jobs:
   build_and_push_images:
-    needs: [initialize_infrastructure]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
@@ -57,7 +56,6 @@ jobs:
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
 
   initialize_app:
-    needs: [initialize_infrastructure]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
