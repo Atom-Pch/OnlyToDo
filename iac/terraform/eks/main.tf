@@ -5,7 +5,7 @@ module "eks" {
   name               = "todo-cluster"
   kubernetes_version = "1.35"
 
-  vpc_id                   = var.vpc
+  vpc_id                   = var.vpc_id
   subnet_ids               = var.private_subnets
   control_plane_subnet_ids = var.private_subnets
 

@@ -43,7 +43,7 @@ module "rds_sg" {
 
   name        = "todo-rds-sg"
   description = "Allow todo RDS service to receive connections from backend and local"
-  vpc_id      = var.vpc
+  vpc_id      = var.vpc_id
 
   ingress_rules       = ["postgresql-tcp"]
   ingress_cidr_blocks = [var.vpc_cidr]
@@ -73,13 +73,13 @@ data "aws_ami" "ubuntu" {
 resource "aws_security_group" "bastion_sg" {
   name        = "ssm-bastion-sg"
   description = "Security Group for SSM Bastion Host"
-  vpc_id      = var.vpc
+  vpc_id      = var.vpc_id
 }
 
 resource "aws_security_group" "ssm_rds_sg" {
   name        = "ssm-rds-sg"
   description = "Security Group for private RDS instance"
-  vpc_id      = var.vpc
+  vpc_id      = var.vpc_id
 }
 
 # Security Group Rules (Decoupled to prevent dependency cycles)
