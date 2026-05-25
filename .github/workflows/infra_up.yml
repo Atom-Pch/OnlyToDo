@@ -154,6 +154,7 @@ jobs:
           ALB_DNS=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
           echo "Fetching Porkbun Secrets..."
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           PORKBUN_API=$(echo $SECRET_JSON | jq -r .PORKBUN_API_KEY)
           PORKBUN_SECRET=$(echo $SECRET_JSON | jq -r .PORKBUN_SECRET_KEY)
 
