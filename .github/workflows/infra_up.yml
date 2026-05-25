@@ -139,26 +139,14 @@ jobs:
           envsubst < k8s/eks/secrets.yml | kubectl apply -f -
           kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml
 
-      - name: Wait for EKS ALB
+      - name: Wait for Load Balancer DNS
         run: |
-          echo "Waiting for AWS Load Balancer Controller to provision the ALB..."
-          ALB_DNS=""
-          # Loop up to 30 times (5 minutes) waiting for the ADDRESS column to populate
-          for i in {1..30}; do
-            # Extract the hostname dynamically from the ingress object
-            ALB_DNS=$(kubectl get ingress todo-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            if [ -n "$ALB_DNS" ]; then
-              echo "ALB provisioned successfully: $ALB_DNS"
-              break
-            fi
-            echo "ALB not ready yet. Waiting 10 seconds..."
-            sleep 10
-          done
-
-          if [ -z "$ALB_DNS" ]; then
-            echo "Error: ALB failed to provision in time."
-            exit 1
-          fi
+          echo "Waiting for ALB to be provisioned and DNS to be assigned..."
+          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
+            ingress/todo-ingress \
+            --timeout=300s
+          ALB_DNS=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "ALB provisioned: $ALB_DNS"
 
       - name: Update Porkbun DNS Record
         run: |
