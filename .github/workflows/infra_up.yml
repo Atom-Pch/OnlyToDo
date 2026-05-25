@@ -5,7 +5,7 @@ on:
 
 env:
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitHubActionsRole"
-  PORKBUN_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
+  APP_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
   AWS_ACCOUNT_ID: "131912109503"
   AWS_REGION: "us-east-2"
   CORE_TABLE_NAME: "users"
@@ -74,7 +74,7 @@ jobs:
           docker tag $GRAFANA_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
 
-  initialize_kubernetes:
+  deploy_application:
     needs: [initialize_infrastructure]
     runs-on: ubuntu-22.04
     steps:
@@ -124,8 +124,12 @@ jobs:
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export DB_PASS=$(echo $SECRET_JSON | jq -r .password)
 
+          echo "Fetching JWT for backend K8s..."
+          JWT_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export JWT_TOKEN=$(echo $JWT_JSON | jq -r .BACKEND_JWT_STRING)
+
           echo "Applying Manifests..."
-          envsubst < k8s/eks/.secrets.yml
+          envsubst < k8s/eks/secrets.yml
           kubectl apply -f k8s/eks/
 
       - name: Wait for EKS ALB
@@ -152,7 +156,7 @@ jobs:
       - name: Update Porkbun DNS Record
         run: |
           echo "Fetching Porkbun Secrets..."
-          PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $PORKBUN_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
           PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
 
