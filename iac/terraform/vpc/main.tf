@@ -65,9 +65,7 @@ resource "aws_vpc_endpoint" "s3" {
 
   route_table_ids = module.vpc.private_route_table_ids
 
-  tags = {
-    Name = "todo-vpce-s3"
-  }
+  tags = { Name = "todo-vpce-s3" }
 }
 
 resource "aws_vpc_endpoint" "ecr_dkr" {
@@ -79,9 +77,7 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
 
   private_dns_enabled = true
 
-  tags = {
-    Name = "todo-vpce-ecr.dkr"
-  }
+  tags = { Name = "todo-vpce-ecr.dkr" }
 }
 
 resource "aws_vpc_endpoint" "ecr_api" {
@@ -93,9 +89,7 @@ resource "aws_vpc_endpoint" "ecr_api" {
 
   private_dns_enabled = true
 
-  tags = {
-    Name = "todo-vpce-ecr.api"
-  }
+  tags = { Name = "todo-vpce-ecr.api" }
 }
 
 resource "aws_vpc_endpoint" "logs" {
@@ -107,9 +101,7 @@ resource "aws_vpc_endpoint" "logs" {
 
   private_dns_enabled = true
 
-  tags = {
-    Name = "todo-vpce-cloudwatch-logs"
-  }
+  tags = { Name = "todo-vpce-cloudwatch-logs" }
 }
 
 resource "aws_vpc_endpoint" "secret" {
@@ -121,9 +113,7 @@ resource "aws_vpc_endpoint" "secret" {
 
   private_dns_enabled = true
 
-  tags = {
-    Name = "todo-vpce-secret-manager"
-  }
+  tags = { Name = "todo-vpce-secret-manager" }
 }
 
 resource "aws_vpc_endpoint" "ssm" {
@@ -135,9 +125,7 @@ resource "aws_vpc_endpoint" "ssm" {
 
   private_dns_enabled = true
 
-  tags = {
-    Name = "todo-vpce-ssm"
-  }
+  tags = { Name = "todo-vpce-ssm" }
 }
 
 resource "aws_vpc_endpoint" "ssm_msg" {
@@ -149,9 +137,7 @@ resource "aws_vpc_endpoint" "ssm_msg" {
 
   private_dns_enabled = true
 
-  tags = {
-    Name = "todo-vpce-ssmmsg"
-  }
+  tags = { Name = "todo-vpce-ssmmsg" }
 }
 
 resource "aws_vpc_endpoint" "ec2_msg" {
@@ -163,9 +149,7 @@ resource "aws_vpc_endpoint" "ec2_msg" {
 
   private_dns_enabled = true
 
-  tags = {
-    Name = "todo-vpce-ec2msg"
-  }
+  tags = { Name = "todo-vpce-ec2msg" }
 }
 
 resource "aws_vpc_endpoint" "sts" {
@@ -176,9 +160,7 @@ resource "aws_vpc_endpoint" "sts" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = {
-    Name = "todo-vpce-sts"
-  }
+  tags = { Name = "todo-vpce-sts" }
 }
 
 resource "aws_vpc_endpoint" "ec2" {
@@ -189,9 +171,7 @@ resource "aws_vpc_endpoint" "ec2" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = {
-    Name = "todo-vpce-ec2"
-  }
+  tags = { Name = "todo-vpce-ec2" }
 }
 
 resource "aws_vpc_endpoint" "eks" {
@@ -214,4 +194,37 @@ resource "aws_vpc_endpoint" "autoscaling" {
   security_group_ids  = [module.vpce_sg.security_group_id]
 
   tags = { Name = "todo-vpce-autoscaling" }
+}
+
+resource "aws_vpc_endpoint" "eks_auth" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.aws_region}.eks-auth"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [module.vpce_sg.security_group_id]
+
+  tags = { Name = "todo-vpce-eks-auth" }
+}
+
+resource "aws_vpc_endpoint" "elasticloadbalancing" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.aws_region}.elasticloadbalancing"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [module.vpce_sg.security_group_id]
+
+  tags = { Name = "todo-vpce-elb" }
+}
+
+resource "aws_vpc_endpoint" "acm" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${var.aws_region}.acm"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = module.vpc.private_subnets
+  security_group_ids  = [module.vpce_sg.security_group_id]
+
+  tags = { Name = "todo-vpce-acm" }
 }

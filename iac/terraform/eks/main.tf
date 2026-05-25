@@ -39,12 +39,28 @@ module "eks" {
       min_size     = 1
       max_size     = 3
       desired_size = 2
-
-      # CRITICAL FIX for v21+: Give the node permissions to run VPC CNI
-    #   iam_role_attach_cni_policy = true
     }
   }
 
-  deletion_protection = false
+  deletion_protection                    = false
   cloudwatch_log_group_retention_in_days = 1
+}
+
+module "aws_lb_controller_pod_identity" {
+  source  = "terraform-aws-modules/eks-pod-identity/aws"
+  version = ">= 1.12.1"
+
+  name = "aws-load-balancer-controller"
+
+  # This boolean automatically fetches and attaches the exact JSON policy you need
+  attach_aws_lb_controller_policy = true
+
+  # This binds the AWS IAM Role directly to the Kubernetes Service Account
+  associations = {
+    this = {
+      cluster_name    = module.eks.cluster_name
+      namespace       = "kube-system"
+      service_account = "aws-load-balancer-controller"
+    }
+  }
 }
