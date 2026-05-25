@@ -30,6 +30,15 @@ jobs:
         with:
           terraform_version: "1.14.8"
 
+      - name: EKS Cleanup
+        run: |
+          echo "Cleaning up EKS resources..."
+          aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster
+          kubectl delete ingress todo-ingress --ignore-not-found
+
+          echo "Waiting for ALB to be cleaned up..."
+          kubectl wait --for=delete ingress/todo-ingress --timeout=5m
+
       - name: Terraform Destroy
         working-directory: iac/terraform/
         run: |
