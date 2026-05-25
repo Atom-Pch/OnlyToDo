@@ -132,8 +132,8 @@ jobs:
           export DB_PASS=$(echo $SECRET_JSON | jq -r .password)
 
           echo "Fetching JWT for backend K8s..."
-          export JWT_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export JWT_TOKEN=$(echo $JWT_JSON | jq -r .BACKEND_JWT_STRING)
+          export SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export JWT_TOKEN=$(echo $SECRET_JSON | jq -r .BACKEND_JWT_STRING)
 
           echo "Applying Manifests..."
           envsubst < k8s/eks/secrets.yml | kubectl apply -f -
@@ -151,13 +151,11 @@ jobs:
       - name: Update Porkbun DNS Record
         run: |
           echo "Fetching Porkbun Secrets..."
-          export PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
-          export PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
+          export PORKBUN_API=$(echo $SECRET_JSON | jq -r .PORKBUN_API_KEY)
+          export PORKBUN_SECRET=$(echo $SECRET_JSON | jq -r .PORKBUN_SECRET_KEY)
 
           echo "Updating DNS Record for ALB on Porkbun..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
-            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }" \
-            > /dev/null
+            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
           echo "EKS ALB DNS Updated Successfully."
