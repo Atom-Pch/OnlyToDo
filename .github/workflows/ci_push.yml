@@ -3,6 +3,9 @@ name: CI - Test & Build
 on:
   push:
     branches: ["main"]
+    paths:
+      - backend/*
+      - frontend/*
   workflow_dispatch:
 
 env:
