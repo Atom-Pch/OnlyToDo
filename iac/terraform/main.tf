@@ -54,8 +54,6 @@ module "s3" {
   source = "./s3"
 
   aws_region = var.aws_region
-  # alb_dns    = module.alb.alb_dns
-  app_dns = "dummy" # REPLACE
 }
 
 module "eks" {
