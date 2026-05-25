@@ -1,3 +1,9 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend-sa
+  namespace: default
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,44 +27,55 @@ spec:
       labels:
         app: backend
     spec:
+      serviceAccountName: backend-sa
       containers:
         - name: backend
-          # In Minikube, we use the local image we build
-          image: todo-backend:latest
-          imagePullPolicy: Never
+          # Minikube
+          # image: todo-backend:latest
+          # imagePullPolicy: Never # Forces Minikube to use the local image
+          # ECR
+          image: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-backend-repo:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
 
           # Resource Requests and Limits
           resources:
             requests:
-              memory: 64M
-              cpu: 128m
-            limits:
-              memory: 128M
+              memory: 128Mi
               cpu: 256m
+            limits:
+              memory: 256Mi
+              cpu: 512m
 
           env:
-            # We hardcode these for local Minikube testing.
             # Later for EKS, we will move these to ConfigMaps and Secrets!
             - name: DB_HOST
-              value: "database" # This will be the name of your Postgres K8s Service
+              value: "todo-db.c962yekmm5ja.us-east-2.rds.amazonaws.com"
             - name: DB_PORT
               value: "5432"
             - name: DB_USER
               value: "atom"
-            - name: DB_PASS
-              value: "atom"
             - name: DB_NAME
               value: "todo_db"
-            - name: JWT_TOKEN
-              value: "local-dev-jwt-secret"
             - name: S3_BUCKET_NAME
-              value: "my-local-bucket" # Mock
+              value: "todo-files-131912109503-us-east-2-an"
             - name: AWS_REGION
               value: "us-east-2"
             - name: PORT
               value: "8080"
+
+            # --- SECURE VARIABLES ---
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: db_pass
+            - name: JWT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: jwt_token
 
           # Readiness and Liveness Probes
           readinessProbe:

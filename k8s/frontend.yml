@@ -12,7 +12,7 @@ spec:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
-      
+
   selector:
     matchLabels:
       app: frontend
@@ -23,19 +23,23 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: todo-frontend:latest
-          imagePullPolicy: Never # Forces Minikube to use the local image
+          # Minikube
+          # image: todo-frontend:latest
+          # imagePullPolicy: Never # Forces Minikube to use the local image
+          # ECR
+          image: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-frontend-repo:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
 
           # Resource Requests and Limits
           resources:
             requests:
-              memory: 64M
-              cpu: 128m
-            limits:
-              memory: 128M
+              memory: 128Mi
               cpu: 256m
+            limits:
+              memory: 256Mi
+              cpu: 512m
 
           readinessProbe:
             httpGet:
