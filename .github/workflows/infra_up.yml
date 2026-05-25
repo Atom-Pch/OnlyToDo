@@ -158,4 +158,4 @@ jobs:
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
-          echo "EKS ALB DNS Updated Successfully."
+          echo "EKS ALB DNS Updated Successfully: $ALB_DNS."
