@@ -7,11 +7,7 @@ env:
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitHubActionsRole"
   PORKBUN_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
   AWS_ACCOUNT_ID: "131912109503"
-  RDS_ENDPOINT: "todo-db.c962yekmm5ja.us-east-2.rds.amazonaws.com"
   AWS_REGION: "us-east-2"
-  DB_NAME: "todo_db"
-  DB_PORT: "5432"
-  SQL_FILE: "database/init.sql"
   CORE_TABLE_NAME: "users"
   FRONTEND_REPO: "todo-frontend-repo"
   BACKEND_REPO: "todo-backend-repo"
@@ -78,7 +74,7 @@ jobs:
           docker tag $GRAFANA_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
 
-  initialize_app:
+  initialize_kubernetes:
     needs: [initialize_infrastructure]
     runs-on: ubuntu-22.04
     steps:
@@ -92,63 +88,76 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          export DEBIAN_FRONTEND=noninteractive
-          sudo apt-get update && sudo apt-get install -y jq postgresql-client netcat-openbsd lsof
+          DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update && sudo apt-get install -y jq
           curl -sL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
           sudo dpkg -i session-manager-plugin.deb
 
-      - name: Initialize Database
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+          chmod 700 get_helm.sh
+          ./get_helm.sh
+
+      - name: Update Kubeconfig
+        run: aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster
+
+      - name: Add EKS Helm Repository
         run: |
-          echo "Fetching Dynamic IDs from SSM Parameter Store..."
-          export EC2_INSTANCE_ID=$(aws ssm get-parameter --name "/todo/config/bastion_ec2_id" --region $AWS_REGION --query "Parameter.Value" --output text)
-          export DB_SECRET_ARN=$(aws ssm get-parameter --name "/todo/config/db_secret_arn" --region $AWS_REGION --query "Parameter.Value" --output text)
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=todo-vpc" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
 
-          echo "Fetching DB Credentials via Lookup..."
+          helm repo add eks https://aws.github.io/eks-charts
+          helm repo update
+          helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+            -n kube-system \
+            --set clusterName=todo-eks-cluster \
+            --set serviceAccount.create=true \
+            --set serviceAccount.name=aws-load-balancer-controller \
+            --set region=$AWS_REGION \
+            --set vpcId=$VPC_ID
+
+      - name: Deploy Kubernetes Application
+        run: |
+          echo "Fetching Dynamic Secrets for K8s..."
+          DB_SECRET_ARN=$(aws ssm get-parameter --name "/todo/config/db_secret_arn" --region $AWS_REGION --query "Parameter.Value" --output text)
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          DB_USER=$(echo $SECRET_JSON | jq -r .username)
-          DB_PASS=$(echo $SECRET_JSON | jq -r .password)
+          export DB_PASS=$(echo $SECRET_JSON | jq -r .password)
 
-          echo "Establishing SSM Tunnel (Background)..."
-          aws ssm start-session \
-            --target "$EC2_INSTANCE_ID" \
-            --document-name AWS-StartPortForwardingSessionToRemoteHost \
-            --parameters host="$RDS_ENDPOINT",portNumber="$DB_PORT",localPortNumber="$DB_PORT" \
-            --region "$AWS_REGION" > /dev/null 2>&1 &
+          echo "Applying Manifests..."
+          envsubst < k8s/eks/.secrets.yml
+          kubectl apply -f k8s/eks/
 
-          echo "Waiting for tunnel to stabilize..."
-          for i in {1..15}; do nc -z 127.0.0.1 $DB_PORT && break || sleep 2; done
+      - name: Wait for EKS ALB
+        run: |
+          echo "Waiting for AWS Load Balancer Controller to provision the ALB..."
+          ALB_DNS=""
+          # Loop up to 30 times (5 minutes) waiting for the ADDRESS column to populate
+          for i in {1..30}; do
+            # Extract the hostname dynamically from the ingress object
+            ALB_DNS=$(kubectl get ingress todo-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [ -n "$ALB_DNS" ]; then
+              echo "ALB provisioned successfully: $ALB_DNS"
+              break
+            fi
+            echo "ALB not ready yet. Waiting 10 seconds..."
+            sleep 10
+          done
 
-          echo "Checking if Core Table exists in Database..."
-          export PGPASSWORD=$DB_PASS
-          TABLE_EXISTS=$(psql -h 127.0.0.1 -p $DB_PORT -U "$DB_USER" -d "$DB_NAME" -tAc "
-            SELECT EXISTS (
-              SELECT FROM information_schema.tables 
-              WHERE table_schema = 'public' 
-              AND table_name = '$CORE_TABLE_NAME'
-            );
-          ")
-
-          if [ "$TABLE_EXISTS" = "f" ]; then
-            echo "Database was empty. Applying initialization script..."
-            psql -h 127.0.0.1 -p $DB_PORT -U "$DB_USER" -d "$DB_NAME" -f $SQL_FILE
-            echo "Initialization script applied successfully."
-          else
-            echo "Table '$CORE_TABLE_NAME' found. Database is already initialized. Skipping."
+          if [ -z "$ALB_DNS" ]; then
+            echo "Error: ALB failed to provision in time."
+            exit 1
           fi
 
-      - name: Update Porkbun DNS 
+      - name: Update Porkbun DNS Record
         run: |
-          echo "Fetching ALB DNS from SSM..."
-          export ALB_DNS=$(aws ssm get-parameter --name "/todo/config/alb_dns" --region $AWS_REGION --query "Parameter.Value" --output text)
-
           echo "Fetching Porkbun Secrets..."
           PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $PORKBUN_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
-          export PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
+          PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
+          PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
 
-          echo "Updating DNS Record for ALB..."
+          echo "Updating DNS Record for ALB on Porkbun..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
-            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }" \
-            > /dev/null
-          echo "ALB DNS Updated Successfully."
+            -d "{\"secretapikey\":\"$PORKBUN_SECRET\", \"apikey\":\"$PORKBUN_API\", \"content\":\"$ALB_DNS\", \"ttl\": \"3600\"}"
+          echo "EKS ALB DNS Updated Successfully."

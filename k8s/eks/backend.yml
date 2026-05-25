@@ -28,6 +28,41 @@ spec:
         app: backend
     spec:
       serviceAccountName: backend-sa
+      initContainers:
+        - name: db-init
+          image: postgres:18-alpine
+          env:
+            # We reuse the exact same environment variables (and secrets!) as your backend
+            - name: DB_HOST
+              value: "todo-db.c962yekmm5ja.us-east-2.rds.amazonaws.com"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: "atom"
+            - name: DB_NAME
+              value: "todo_db"
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: db_pass
+          command:
+            - sh
+            - -c
+            - |
+              echo "Checking if Core Table exists in Database..."
+              TABLE_EXISTS=$(psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users');")
+
+              if [ "$TABLE_EXISTS" = "f" ]; then
+                echo "Database was empty. Applying initialization script..."
+                psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f /scripts/init.sql
+                echo "Initialization script applied successfully."
+              else
+                echo "Table found. Database is already initialized. Skipping."
+              fi
+          volumeMounts:
+            - name: script-volume
+              mountPath: /scripts
       containers:
         - name: backend
           # Minikube
@@ -90,6 +125,12 @@ spec:
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 30
+
+      # --- NEW VOLUME FOR THE CONFIGMAP ---
+      volumes:
+        - name: script-volume
+          configMap:
+            name: db-init-script
 
 ---
 apiVersion: v1
