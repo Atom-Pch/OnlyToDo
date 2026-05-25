@@ -33,7 +33,7 @@ jobs:
       - name: EKS Cleanup
         run: |
           echo "Cleaning up EKS resources..."
-          aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster --ignore-not-found
+          aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
           kubectl delete ingress todo-ingress --ignore-not-found
 
           echo "Waiting for ALB to be cleaned up..."
