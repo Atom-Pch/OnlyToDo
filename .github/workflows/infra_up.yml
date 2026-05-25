@@ -102,7 +102,7 @@ jobs:
 
       - name: Add EKS Helm Repository
         run: |
-          VPC_ID=$(aws ec2 describe-vpcs \
+          export VPC_ID=$(aws ec2 describe-vpcs \
             --filters "Name=tag:Name,Values=todo-vpc" \
             --query 'Vpcs[0].VpcId' \
             --output text)
@@ -127,12 +127,12 @@ jobs:
       - name: Deploy Kubernetes Application
         run: |
           echo "Fetching Dynamic Secrets for K8s..."
-          DB_SECRET_ARN=$(aws ssm get-parameter --name "/todo/config/db_secret_arn" --region $AWS_REGION --query "Parameter.Value" --output text)
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export DB_SECRET_ARN=$(aws ssm get-parameter --name "/todo/config/db_secret_arn" --region $AWS_REGION --query "Parameter.Value" --output text)
+          export SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export DB_PASS=$(echo $SECRET_JSON | jq -r .password)
 
           echo "Fetching JWT for backend K8s..."
-          JWT_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export JWT_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export JWT_TOKEN=$(echo $JWT_JSON | jq -r .BACKEND_JWT_STRING)
 
           echo "Applying Manifests..."
@@ -145,18 +145,19 @@ jobs:
           kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
             ingress/todo-ingress \
             --timeout=10m
-          ALB_DNS=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          export ALB_DNS=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "ALB provisioned: $ALB_DNS"
 
       - name: Update Porkbun DNS Record
         run: |
           echo "Fetching Porkbun Secrets..."
-          PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
-          PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
+          export PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
+          export PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
 
           echo "Updating DNS Record for ALB on Porkbun..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
-            -d "{\"secretapikey\":\"$PORKBUN_SECRET\", \"apikey\":\"$PORKBUN_API\", \"content\":\"$ALB_DNS\", \"ttl\": \"3600\"}"
+            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }" \
+            > /dev/null
           echo "EKS ALB DNS Updated Successfully."
