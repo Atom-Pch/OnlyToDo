@@ -118,13 +118,11 @@ jobs:
             --set vpcId=$VPC_ID \
             --set image.repository=602401143452.dkr.ecr.us-east-2.amazonaws.com/amazon/aws-load-balancer-controller
 
-      - name: Wait for aws-load-balancer-controller
+      - name: Wait for Load Balancer Controller to become Ready
         run: |
-          echo "Waiting for AWS Load Balancer Controller pods to be ready..."
-          kubectl wait --namespace kube-system \
-            --selector=app.kubernetes.io/name=aws-load-balancer-controller \
-            --for=condition=Ready \
-            --timeout=5m
+          echo "Waiting for the aws-load-balancer-controller deployment to roll out..."
+          kubectl rollout status deployment aws-load-balancer-controller -n kube-system --timeout=120s
+          echo "Controller is ready! Proceeding to application deployment."
 
       - name: Deploy Kubernetes Application
         run: |
