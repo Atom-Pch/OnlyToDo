@@ -65,3 +65,47 @@ module "aws_lb_controller_pod_identity" {
     }
   }
 }
+
+# S3 access policy
+resource "aws_iam_policy" "backend_s3" {
+  name        = "todo-backend-s3-policy"
+  description = "Allows backend to upload files to S3"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::todo-files-131912109503-us-east-2-an",
+          "arn:aws:s3:::todo-files-131912109503-us-east-2-an/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Use the exact same module to bind it to your backend
+module "backend_pod_identity" {
+  source  = "terraform-aws-modules/eks-pod-identity/aws"
+  version = ">= 1.12.1"
+
+  name = "todo-backend-s3-role"
+
+  additional_policy_arns = { s3 = aws_iam_policy.backend_s3.arn }
+
+  # This binds the role specifically to the backend pod
+  associations = {
+    backend = {
+      cluster_name    = module.eks.cluster_name
+      namespace       = "default"
+      service_account = "backend-sa" # MUST match your backend.yml
+    }
+  }
+}
