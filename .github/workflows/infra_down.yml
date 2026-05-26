@@ -50,7 +50,7 @@ jobs:
           aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
 
           echo "Fetching ALB ARN before deletion..."
-          ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
 
           if [ -n "$ALB_DNS" ]; then
             echo "ALB DNS found: $ALB_DNS. Proceeding with cleanup..."
