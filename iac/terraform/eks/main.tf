@@ -42,6 +42,10 @@ module "eks" {
     }
   }
 
+  iam_role_additional_policies = {
+    AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  }
+
   cloudwatch_log_group_retention_in_days = 1
 }
 
