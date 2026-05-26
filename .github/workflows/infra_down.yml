@@ -32,12 +32,16 @@ jobs:
 
       - name: EKS Cleanup
         run: |
+          echo "Get kubeconfig for EKS cluster..."
           aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
 
           echo "Deleting ingress resources..."
           kubectl delete -f ./k8s/eks/ingress.yml --ignore-not-found 2>/dev/null || true
 
-          echo "Waiting for ALB to be cleaned up..."
+          echo "Forcing Finalizer removal to prevent pipeline hangs..."
+          kubectl patch ingress todo-ingress -n default -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
+
+          echo "Waiting for Ingress to be removed from K8s..."
           kubectl wait --for=delete ingress/todo-ingress --timeout=5m 2>/dev/null || true
 
       - name: Terraform Destroy
