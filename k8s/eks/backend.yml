@@ -41,7 +41,7 @@ spec:
               value: "atom"
             - name: DB_NAME
               value: "todo_db"
-            - name: DB_PASS
+            - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   name: todo-secrets
@@ -50,15 +50,17 @@ spec:
             - sh
             - -c
             - |
+              set -e  # ← exit immediately if any command fails
               echo "Checking if Core Table exists in Database..."
-              TABLE_EXISTS=$(psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users');")
+              TABLE_EXISTS=$(psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -tAc \
+                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users');")
 
               if [ "$TABLE_EXISTS" = "f" ]; then
                 echo "Database was empty. Applying initialization script..."
                 psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f /scripts/init.sql
                 echo "Initialization script applied successfully."
               else
-                echo "Table found. Database is already initialized. Skipping."
+                echo "Table found. Skipping."
               fi
           volumeMounts:
             - name: script-volume
