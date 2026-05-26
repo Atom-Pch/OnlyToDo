@@ -96,16 +96,18 @@ jobs:
           chmod 700 get_helm.sh
           ./get_helm.sh
 
-      - name: Update Kubeconfig
-        run: aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster
-
       - name: Add EKS Helm Repository
         run: |
+          echo "Updating kubeconfig for EKS cluster..."
+          aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster
+
+          echo "Fetching VPC ID for EKS Cluster..."
           VPC_ID=$(aws ec2 describe-vpcs \
             --filters "Name=tag:Name,Values=todo-vpc" \
             --query 'Vpcs[0].VpcId' \
             --output text)
 
+          echo "Adding EKS Helm Repository and Install AWS Load Balancer Controller..."
           helm repo add eks https://aws.github.io/eks-charts
           helm repo update
           helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
