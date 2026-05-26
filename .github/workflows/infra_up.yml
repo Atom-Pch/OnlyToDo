@@ -59,6 +59,10 @@ jobs:
 
       - name: Build and Push Images
         run: |
+          docker pull postgres:18-alpine
+          docker tag postgres:18-alpine $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$MISC_REPO:postgres-18-alpine
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$MISC_REPO:postgres-18-alpine
+
           docker build --provenance=false -t $FRONTEND_REPO ./frontend/
           docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
@@ -74,10 +78,6 @@ jobs:
           docker build --provenance=false -t $GRAFANA_REPO ./mno/grafana/
           docker tag $GRAFANA_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
-
-          docker pull postgres:18-alpine
-          docker tag postgres:18-alpine $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$MISC_REPO:postgres-18-alpine
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$MISC_REPO:postgres-18-alpine
 
   deploy_application:
     needs: [initialize_infrastructure]
