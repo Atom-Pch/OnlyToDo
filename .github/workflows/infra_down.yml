@@ -30,10 +30,16 @@ jobs:
         with:
           terraform_version: "1.14.8"
 
-      - name: EKS Cleanup
+      - name: EKS Ingress Cleanup
         run: |
           echo "Get kubeconfig for EKS cluster..."
           aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
+
+          echo "Fetching ALB ARN before deletion..."
+          ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          if [ -n "$ALB_DNS" ]; then
+            ALB_ARN=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '$ALB_DNS')].LoadBalancerArn" --output text)
+          fi
 
           echo "Deleting ingress resources..."
           kubectl delete -f ./k8s/eks/ingress.yml --ignore-not-found 2>/dev/null || true
@@ -41,8 +47,14 @@ jobs:
           echo "Forcing Finalizer removal to prevent pipeline hangs..."
           kubectl patch ingress todo-ingress -n default -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
 
-          echo "Waiting for Ingress to be removed from K8s..."
-          kubectl wait --for=delete ingress/todo-ingress --timeout=5m 2>/dev/null || true
+          if [ -n "$ALB_ARN" ]; then
+            echo "Waiting for AWS to destroy the ALB ($ALB_ARN)..."
+            aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
+            echo "ALB fully deleted from AWS!"
+            sleep 30
+          else
+            echo "No ALB found in AWS. Skipping."
+          fi
 
       - name: Terraform Destroy
         working-directory: iac/terraform/
