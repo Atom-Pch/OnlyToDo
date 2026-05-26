@@ -1,3 +1,22 @@
+module "vpc_cni_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  version = ">= 6.6.0"
+
+  name = "todo-vpc-cni-role"
+
+  # This boolean automatically fetches and attaches the AmazonEKS_CNI_Policy
+  attach_vpc_cni_policy = true
+  vpc_cni_enable_ipv4   = true
+
+  # This binds the AWS IAM Role exclusively to the "aws-node" pod in Kubernetes
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:aws-node"]
+    }
+  }
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = ">= 21.20.0"
@@ -13,7 +32,8 @@ module "eks" {
   addons = {
     coredns = {}
     vpc-cni = {
-      before_compute = true # THE MOST IMPORTANT PART!! DO NOT FORGET OR YOU WILL SPEND HOURS DEBUGGING!!
+      before_compute           = true # THE MOST IMPORTANT PART!! DO NOT FORGET OR YOU WILL SPEND HOURS DEBUGGING!!
+      service_account_role_arn = module.vpc_cni_irsa.iam_role_arn
     }
     kube-proxy = {}
     eks-pod-identity-agent = {
@@ -39,13 +59,7 @@ module "eks" {
       min_size     = 1
       max_size     = 3
       desired_size = 2
-
-      iam_role_attach_cni_policy = true
     }
-  }
-
-  iam_role_additional_policies = {
-    AmazonEKS_CNI_Policy = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   }
 
   cloudwatch_log_group_retention_in_days = 1
