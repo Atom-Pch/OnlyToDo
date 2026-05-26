@@ -32,11 +32,10 @@ jobs:
 
       - name: EKS Cleanup
         run: |
-          echo "Cleaning up EKS resources..."
           aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
-          kubectl delete ingress todo-ingress --ignore-not-found 2>/dev/null || true
 
           echo "Waiting for ALB to be cleaned up..."
+          kubectl delete ingress todo-ingress --ignore-not-found 2>/dev/null || true
           kubectl wait --for=delete ingress/todo-ingress --timeout=5m 2>/dev/null || true
 
       - name: Terraform Destroy
