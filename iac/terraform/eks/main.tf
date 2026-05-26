@@ -31,7 +31,7 @@ module "eks" {
   addons = {
     coredns = {}
     vpc-cni = {
-      before_compute           = true # THE MOST IMPORTANT PART!! DO NOT FORGET OR YOU WILL SPEND HOURS DEBUGGING!!
+      before_compute = true # THE MOST IMPORTANT PART!! DO NOT FORGET OR YOU WILL SPEND HOURS DEBUGGING!!
     }
     kube-proxy = {}
     eks-pod-identity-agent = {
