@@ -37,20 +37,21 @@ jobs:
 
           echo "Fetching ALB ARN before deletion..."
           ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
           if [ -n "$ALB_DNS" ]; then
+            echo "ALB DNS found: $ALB_DNS. Proceeding with cleanup..."
             ALB_ARN=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '$ALB_DNS')].LoadBalancerArn" --output text)
-          fi
 
-          echo "Deleting ingress resources..."
-          kubectl delete -f ./k8s/eks/ingress.yml --ignore-not-found 2>/dev/null || true
+            echo "Deleting ingress resources..."
+            kubectl delete -f ./k8s/eks/ingress.yml --ignore-not-found 2>/dev/null || true
 
-          echo "Forcing Finalizer removal to prevent pipeline hangs..."
-          kubectl patch ingress todo-ingress -n default -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
+            echo "Forcing Finalizer removal to prevent pipeline hangs..."
+            kubectl patch ingress todo-ingress -n default -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
 
-          if [ -n "$ALB_ARN" ]; then
             echo "Waiting for AWS to destroy the ALB ($ALB_ARN)..."
             aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
-            echo "ALB fully deleted from AWS!"
+
+            echo "ALB fully deleted from AWS! Clearing up..."
             sleep 30
           else
             echo "No ALB found in AWS. Skipping."
