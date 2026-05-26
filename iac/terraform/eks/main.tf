@@ -33,7 +33,7 @@ module "eks" {
     coredns = {}
     vpc-cni = {
       before_compute           = true # THE MOST IMPORTANT PART!! DO NOT FORGET OR YOU WILL SPEND HOURS DEBUGGING!!
-      service_account_role_arn = module.vpc_cni_irsa.iam_role_arn
+      service_account_role_arn = module.vpc_cni_irsa.arn
     }
     kube-proxy = {}
     eks-pod-identity-agent = {

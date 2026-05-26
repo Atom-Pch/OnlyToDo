@@ -136,6 +136,11 @@ jobs:
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export JWT_TOKEN=$(echo $SECRET_JSON | jq -r .BACKEND_JWT_STRING)
 
+          echo "Creating ConfigMap for DB Initialization Script..."
+          kubectl create configmap db-init-script \
+            --from-file=init.sql=database/init.sql \
+            --dry-run=client -o yaml | kubectl apply -f -
+
           echo "Applying Manifests..."
           envsubst < k8s/eks/secrets.yml | kubectl apply -f -
           kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml
