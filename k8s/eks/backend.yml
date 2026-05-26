@@ -30,7 +30,7 @@ spec:
       serviceAccountName: backend-sa
       initContainers:
         - name: db-init
-          image: postgres:18-alpine
+          image: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-misc-repo:postgres-18-alpine
           env:
             # We reuse the exact same environment variables (and secrets!) as your backend
             - name: DB_HOST
