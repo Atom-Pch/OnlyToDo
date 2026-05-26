@@ -48,6 +48,9 @@ module "eks" {
   # Utilizes the new Cluster Access Entry API to grant you admin rights
   enable_cluster_creator_admin_permissions = true
 
+  # For CNI IRSA
+  enable_irsa = true
+
   # EKS Managed Node Group
   eks_managed_node_groups = {
     todo_nodes = {
