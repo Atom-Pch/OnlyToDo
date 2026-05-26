@@ -33,7 +33,6 @@ module "vpc" {
 
   aws_region = var.aws_region
   vpc_cidr   = var.vpc_cidr
-  ssm_rds_sg = module.rds.ssm_rds_sg
 }
 
 module "rds" {

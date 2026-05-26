@@ -116,42 +116,6 @@ resource "aws_vpc_endpoint" "secret" {
   tags = { Name = "todo-vpce-secret-manager" }
 }
 
-resource "aws_vpc_endpoint" "ssm" {
-  vpc_id             = module.vpc.vpc_id
-  service_name       = "com.amazonaws.${var.aws_region}.ssm"
-  vpc_endpoint_type  = "Interface"
-  subnet_ids         = module.vpc.private_subnets
-  security_group_ids = [module.vpce_sg.security_group_id]
-
-  private_dns_enabled = true
-
-  tags = { Name = "todo-vpce-ssm" }
-}
-
-resource "aws_vpc_endpoint" "ssm_msg" {
-  vpc_id             = module.vpc.vpc_id
-  service_name       = "com.amazonaws.${var.aws_region}.ssmmessages"
-  vpc_endpoint_type  = "Interface"
-  subnet_ids         = module.vpc.private_subnets
-  security_group_ids = [module.vpce_sg.security_group_id]
-
-  private_dns_enabled = true
-
-  tags = { Name = "todo-vpce-ssmmsg" }
-}
-
-resource "aws_vpc_endpoint" "ec2_msg" {
-  vpc_id             = module.vpc.vpc_id
-  service_name       = "com.amazonaws.${var.aws_region}.ec2messages"
-  vpc_endpoint_type  = "Interface"
-  subnet_ids         = module.vpc.private_subnets
-  security_group_ids = [module.vpce_sg.security_group_id]
-
-  private_dns_enabled = true
-
-  tags = { Name = "todo-vpce-ec2msg" }
-}
-
 resource "aws_vpc_endpoint" "sts" {
   vpc_id              = module.vpc.vpc_id
   service_name        = "com.amazonaws.${var.aws_region}.sts"
