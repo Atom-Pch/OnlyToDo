@@ -61,8 +61,9 @@ jobs:
 
             echo "Deleting ingress resources..."
             kubectl delete -f ./k8s/eks/ingress.yml --ignore-not-found 2>/dev/null || true
+            aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
 
-            echo "Waiting for AWS to destroy the ALB ($ALB_ARN)..."
+            echo "Waiting for AWS to destroy the ALB..."
             aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
 
             echo "ALB fully deleted from AWS! Clearing up..."
