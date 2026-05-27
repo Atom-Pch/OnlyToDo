@@ -71,14 +71,6 @@ jobs:
           docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
 
-          docker build --provenance=false -t $PROMETHEUS_REPO ./mno/prometheus/
-          docker tag $PROMETHEUS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$PROMETHEUS_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$PROMETHEUS_REPO:latest
-
-          docker build --provenance=false -t $GRAFANA_REPO ./mno/grafana/
-          docker tag $GRAFANA_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
-
   deploy_application:
     needs: [initialize_infrastructure]
     runs-on: ubuntu-22.04
