@@ -49,8 +49,12 @@ jobs:
           echo "Get kubeconfig for EKS cluster..."
           aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
 
-          echo "Fetching ALB ARN before deletion..."
+          echo "Fetching ALB and VPC ID before deletion..."
           ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=todo-vpc" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
 
           if [ -n "$ALB_DNS" ]; then
             echo "ALB DNS found: $ALB_DNS. Proceeding with cleanup..."
@@ -62,6 +66,7 @@ jobs:
             echo "Deleting ingress resources..."
             kubectl delete -f ./k8s/eks/ingress.yml --ignore-not-found 2>/dev/null || true
             aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
+            aws ec2 delete-vpc --vpc-id $VPC_ID
 
             echo "Waiting for AWS to destroy the ALB..."
             aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
