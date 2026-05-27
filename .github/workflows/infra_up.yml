@@ -158,12 +158,17 @@ jobs:
 
       - name: Install kube-prometheus-stack
         run: |
+          echo "Fetching Grafana Admin Password from Secrets Manager..."
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export GRAFANA_PASS=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
+          envsubst < k8s/eks/secrets.yml | kubectl apply -f -
+
+          echo "Installing kube-prometheus-stack Helm..."
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
 
-          helm upgrade --install kube-prom prometheus-community/kube-prometheus-stack \
-            --version "85.2.0" \
-            -f k8s/eks/monitoring/values.yml
+          helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
+            --version "85.2.0" -f k8s/eks/monitoring/values.yml
 
       - name: Update Porkbun DNS Record
         run: |
