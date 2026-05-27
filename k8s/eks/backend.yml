@@ -120,13 +120,13 @@ spec:
               path: /
               port: 8080
             initialDelaySeconds: 10
-            periodSeconds: 30
+            periodSeconds: 15
           livenessProbe:
             httpGet:
               path: /
               port: 8080
             initialDelaySeconds: 10
-            periodSeconds: 30
+            periodSeconds: 15
 
       # --- NEW VOLUME FOR THE CONFIGMAP ---
       volumes:
