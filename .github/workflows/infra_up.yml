@@ -159,7 +159,7 @@ jobs:
       - name: Install kube-prometheus-stack
         run: |
           echo "Fetching Grafana Admin Password from Secrets Manager..."
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export GRAFANA_PASS=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
           envsubst < k8s/eks/secrets.yml | kubectl apply -f -
 
