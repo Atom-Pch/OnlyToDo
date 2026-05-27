@@ -132,10 +132,6 @@ func metricsMiddleware(next http.Handler) http.Handler {
 		// Extract the path (e.g., "/api/todos")
 		path := r.URL.Path
 
-		// DevOps Note: If you have URLs with IDs like /api/todos/5, it's best practice
-		// to strip the ID and log it as "/api/todos/{id}" to avoid high cardinality in Prometheus.
-		// For this simple app, logging the raw path is fine to start.
-
 		// Record the metrics!
 		httpDuration.WithLabelValues(r.Method, path).Observe(duration)
 		httpRequestsTotal.WithLabelValues(r.Method, path, strconv.Itoa(sw.status)).Inc()
