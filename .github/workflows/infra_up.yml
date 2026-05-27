@@ -142,7 +142,8 @@ jobs:
           envsubst < k8s/eks/secrets.yml | kubectl apply -f -
 
           for i in {1..5}; do
-            kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml && break || \
+            kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml \
+            -f k8s/eks/monitoring/grafana-dashboard-configmap.yml && break || \
             echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
           done
 
@@ -154,6 +155,15 @@ jobs:
             --timeout=10m
           ALB_DNS=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "ALB provisioned: $ALB_DNS"
+
+      - name: Install kube-prometheus-stack
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+          helm upgrade --install kube-prom prometheus-community/kube-prometheus-stack \
+            --version "85.2.0" \
+            -f k8s/eks/monitoring/values.yml
 
       - name: Update Porkbun DNS Record
         run: |
