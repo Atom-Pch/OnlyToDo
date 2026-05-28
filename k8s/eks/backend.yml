@@ -44,7 +44,7 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets
+                  name: todo-secrets-default
                   key: db_pass
           command:
             - sh
@@ -106,12 +106,12 @@ spec:
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets
+                  name: todo-secrets-default
                   key: db_pass
             - name: JWT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets
+                  name: todo-secrets-default
                   key: jwt_token
 
           # Readiness and Liveness Probes

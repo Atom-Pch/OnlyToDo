@@ -14,8 +14,8 @@ prometheus:
 
 grafana:
   admin:
-    existingSecret: todo-secrets
-    passwordKey: graf_admin_password
+    existingSecret: todo-secrets-monitoring
+    passwordKey: admin-password
   persistence:
     enabled: false # keep off to avoid EBS costs; dashboards come from configmaps
   # Import your existing Go dashboard by its Grafana.com ID or embed it
