@@ -36,6 +36,7 @@ module "eks" {
         env = {
           # Enable IP Prefix Delegation for more pods
           ENABLE_PREFIX_DELEGATION = "true"
+          WARM_PREFIX_TARGET       = "1"
         }
       })
     }
