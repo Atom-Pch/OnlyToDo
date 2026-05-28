@@ -46,7 +46,7 @@ jobs:
 
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/CNAME/*" \
             -H "Content-Type: application/json" \
-            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$PARK_DOMAIN\", \"ttl\": \"600\" }"
+            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"pixie.porkbun.com\", \"ttl\": \"600\" }"
           echo "Sub-Domain Parked Successfully."
 
       - name: EKS Ingress Cleanup
