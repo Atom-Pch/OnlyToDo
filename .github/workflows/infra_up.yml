@@ -157,7 +157,7 @@ jobs:
 
           for i in {1..5}; do
             kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml \
-            -f k8s/eks/monitoring/grafana-dashboard-configmap.yml && break || \
+            -f k8s/eks/monitoring/graf-dash-cfm.yml && break || \
             echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
           done
 
