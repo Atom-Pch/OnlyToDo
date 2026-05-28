@@ -61,17 +61,17 @@ module "vpce_sg" {
 module "fck_nat" {
   source = "RaJiska/fck-nat/aws"
 
-  name   = "todo-fck-nat"
-  vpc_id = module.vpc.vpc_id # Replace with your actual VPC ID reference
+  name      = "todo-fck-nat"
+  vpc_id    = module.vpc.vpc_id            # Replace with your actual VPC ID reference
   subnet_id = module.vpc.public_subnets[0] # Must be placed in a public subnet
-  ha_mode = true
+  ha_mode   = true
 
   # A t4g.nano is ARM-based, costs about $3/month, and provides up to 5Gbps
-  instance_type = "t4g.nano" 
+  instance_type = "t4g.nano"
 
   # Automatically update the default route of your private subnets
   update_route_tables = true
-  route_tables_ids    = module.vpc.private_route_table_ids 
+  route_tables_ids    = module.vpc.private_route_table_ids
 }
 
 # VPC ENDPOINTS
