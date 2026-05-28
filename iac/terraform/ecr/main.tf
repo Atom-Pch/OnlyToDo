@@ -104,32 +104,3 @@ module "backend_repo" {
 
   repository_force_delete = true
 }
-
-module "misc_repo" {
-  source  = "terraform-aws-modules/ecr/aws"
-  version = ">= 3.2.0"
-
-  repository_name = "todo-misc-repo"
-  repository_type = "private"
-
-  repository_image_tag_mutability = "IMMUTABLE"
-
-  repository_lifecycle_policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1,
-        description  = "Keep no untagged images",
-        selection = {
-          tagStatus   = "untagged",
-          countType   = "imageCountMoreThan",
-          countNumber = 1
-        },
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
-
-  repository_force_delete = true
-}
