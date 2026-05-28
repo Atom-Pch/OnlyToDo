@@ -32,6 +32,21 @@ grafana:
   dashboardsConfigMaps:
     custom: grafana-dashboard
 
+  ingress:
+      enabled: true
+      ingressClassName: alb
+      annotations:
+        alb.ingress.kubernetes.io/scheme: internet-facing
+        alb.ingress.kubernetes.io/target-type: ip
+        alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:131912109503:certificate/3f2971ec-a640-4a4d-8c86-5a67a803d284
+        alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+        alb.ingress.kubernetes.io/ssl-redirect: '443'
+        alb.ingress.kubernetes.io/group.name: todo-shared-alb # Groups them together!
+      hosts:
+        - monitoring.onlytodo.xyz
+      paths:
+        - /*
+
 alertmanager:
   enabled: false # disable until you need it
 

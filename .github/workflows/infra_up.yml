@@ -134,7 +134,7 @@ jobs:
           echo "Installing kube-prometheus-stack Helm..."
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
-          
+
           for i in {1..5}; do
             helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
               --namespace monitoring \
@@ -196,6 +196,11 @@ jobs:
 
           echo "Updating DNS Record for ALB on Porkbun..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
+            -H "Content-Type: application/json" \
+            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
+          echo "EKS ALB DNS Updated Successfully: $ALB_DNS."
+
+          curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/CNAME/*" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
           echo "EKS ALB DNS Updated Successfully: $ALB_DNS."

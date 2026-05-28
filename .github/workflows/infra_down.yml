@@ -37,12 +37,17 @@ jobs:
           export PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
           export PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
 
-          echo "Updating DNS Record for ALB..."
+          echo "Parking Domain..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$PARK_DOMAIN\", \"ttl\": \"600\" }" \
             > /dev/null
           echo "Domain Parked Successfully."
+
+          curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/CNAME/*" \
+            -H "Content-Type: application/json" \
+            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$PARK_DOMAIN\", \"ttl\": \"600\" }"
+          echo "Sub-Domain Parked Successfully."
 
       - name: EKS Ingress Cleanup
         run: |
