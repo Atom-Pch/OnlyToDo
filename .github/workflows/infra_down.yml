@@ -80,5 +80,12 @@ jobs:
       - name: Terraform Destroy
         working-directory: iac/terraform/
         run: |
+          # echo "Excluding VPC.."
+          # terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
+
+          echo "Destroying the rest..."
           terraform init
           terraform destroy -auto-approve
+
+          # echo "NOW destroying VPC..."
+          # terraform destroy -auto-approve
