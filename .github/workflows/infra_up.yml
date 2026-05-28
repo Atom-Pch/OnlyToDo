@@ -129,11 +129,14 @@ jobs:
           echo "Installing kube-prometheus-stack Helm..."
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
-
-          helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
-            --namespace monitoring \
-            --version "85.2.0" \
-            -f k8s/eks/monitoring/values.yml
+          
+          for i in {1..5}; do
+            helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
+              --namespace monitoring \
+              --version "85.2.0" \
+              -f k8s/eks/monitoring/values.yml && break || \
+            echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
+          done
 
       - name: Deploy Kubernetes Application
         run: |
