@@ -52,7 +52,7 @@ module "eks" {
       # AL2023 is the default AMI type for EKS managed node groups starting 1.30
       ami_type = "AL2023_x86_64_STANDARD"
 
-      instance_types = ["t3.small"]
+      instance_types = ["c7i-flex.large"]
 
       min_size     = 1
       max_size     = 3
