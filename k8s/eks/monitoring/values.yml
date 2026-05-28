@@ -1,6 +1,6 @@
 prometheus:
   prometheusSpec:
-    # Watch ServiceMonitors across ALL namespaces, not just 'monitoring'
+    # Watch ServiceMonitors across ALL namespaces
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     retention: 24h
