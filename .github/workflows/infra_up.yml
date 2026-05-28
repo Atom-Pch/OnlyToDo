@@ -130,7 +130,7 @@ jobs:
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
 
-          helm upgrade --i kube-prom prometheus-community/kube-prometheus-stack \
+          helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
             --namespace monitoring \
             --version "85.2.0" \
             -f k8s/eks/monitoring/values.yml
