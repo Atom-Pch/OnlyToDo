@@ -72,7 +72,7 @@ jobs:
             aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
 
             echo "ALB fully deleted from AWS! Clearing up..."
-            sleep 30
+            sleep 180
           else
             echo "No ALB found in AWS. Skipping."
           fi
@@ -86,4 +86,4 @@ jobs:
             --output text)
 
           terraform init
-          terraform destroy -auto-approve && wait 15m; aws ec2 wait vpc-deleted --vpc-ids $VPC_ID
+          terraform destroy -auto-approve
