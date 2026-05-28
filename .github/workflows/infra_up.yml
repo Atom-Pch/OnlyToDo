@@ -11,8 +11,6 @@ env:
   CORE_TABLE_NAME: "users"
   FRONTEND_REPO: "todo-frontend-repo"
   BACKEND_REPO: "todo-backend-repo"
-  PROMETHEUS_REPO: "todo-prom-repo"
-  GRAFANA_REPO: "todo-graf-repo"
 
 permissions:
   id-token: write
@@ -119,8 +117,9 @@ jobs:
 
       - name: Install kube-prometheus-stack
         run: |
-          echo "Fetching Grafana Admin Password from Secrets Manager..."
+          echo "Injecting Grafana Admin Username and Password from Secrets Manager..."
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export GRAFANA_USER=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_USER)
           export GRAFANA_PASS=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
           envsubst < k8s/eks/secrets.yml | kubectl apply -f -
 
