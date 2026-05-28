@@ -2,6 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: backend
+  namespace: monitoring
   labels:
     release: kube-prom # must match the Helm release name
 spec:
