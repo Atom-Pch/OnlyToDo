@@ -117,6 +117,9 @@ jobs:
 
       - name: Install kube-prometheus-stack
         run: |
+          echo "Creating monitoring namespace..."
+          kubectl create namespace monitoring
+
           echo "Injecting Grafana Admin Username and Password from Secrets Manager..."
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export GRAFANA_USER=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_USER)
@@ -124,10 +127,9 @@ jobs:
           envsubst < k8s/eks/secrets.yml | kubectl apply -f -
 
           echo "Installing kube-prometheus-stack Helm..."
-          kubectl create namespace monitoring
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
-          
+
           helm upgrade --i kube-prom prometheus-community/kube-prometheus-stack \
             --namespace monitoring \
             --version "85.2.0" \
