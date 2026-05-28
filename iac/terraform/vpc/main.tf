@@ -70,7 +70,10 @@ module "fck_nat" {
 
   # Automatically update the default route of your private subnets
   update_route_tables = true
-  route_tables_ids    = module.vpc.private_route_table_ids
+  route_tables_ids = {
+    id1 = module.vpc.private_route_table_ids[0],
+    id2 = module.vpc.private_route_table_ids[1]
+  }
 }
 
 # VPC ENDPOINTS
