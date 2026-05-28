@@ -151,6 +151,6 @@ spec:
       targetPort: 8080
     - name: metrics
       protocol: TCP
-      port: 8080
-      targetPort: 8080
+      port: 9090
+      targetPort: 9090
   type: ClusterIP # ClusterIP means it's only accessible from inside the K8s cluster
