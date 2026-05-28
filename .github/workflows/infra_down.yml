@@ -66,7 +66,7 @@ jobs:
             echo "Deleting ingress resources..."
             kubectl delete -f ./k8s/eks/ingress.yml --ignore-not-found 2>/dev/null || true
             aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
-            aws ec2 delete-vpc --vpc-id $VPC_ID
+            
 
             echo "Waiting for AWS to destroy the ALB..."
             aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
@@ -75,6 +75,13 @@ jobs:
             sleep 30
           else
             echo "No ALB found in AWS. Skipping."
+          fi
+
+          if [ -n "$VPC_ID" ]; then
+            echo "VPC ID found: $VPC_ID. Proceeding with cleanup..."
+            aws ec2 delete-vpc --vpc-id $VPC_ID
+          else
+            echo "No VPC found in AWS. Skipping."
           fi
 
       - name: Terraform Destroy
