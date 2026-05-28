@@ -156,10 +156,12 @@ jobs:
           envsubst < k8s/eks/secrets.yml | kubectl apply -f -
 
           for i in {1..5}; do
-            kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml \
-            -f k8s/eks/monitoring/graf-dash-cfm.yml && break || \
+            kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml && break || \
             echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
           done
+
+          echo "Applying grafana dashboard..."
+          kubectl apply -f k8s/eks/monitoring/graf-dash-cfm.yml
 
       - name: Wait for Load Balancer DNS
         run: |
