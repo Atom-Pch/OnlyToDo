@@ -124,7 +124,12 @@ jobs:
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export GRAFANA_USER=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_USER)
           export GRAFANA_PASS=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
-          envsubst < k8s/eks/secrets.yml | kubectl apply -f -
+
+          if [ -z "$GRAFANA_USER" ] || [ -z "$GRAFANA_PASS" ]; then
+            echo "ERROR: Grafana credentials missing from Secrets Manager"
+            exit 1
+          fi
+          envsubst '${GRAFANA_USER} ${GRAFANA_PASS}' < k8s/eks/secrets.yml | kubectl apply -f -
 
           echo "Installing kube-prometheus-stack Helm..."
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -149,13 +154,18 @@ jobs:
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export JWT_TOKEN=$(echo $SECRET_JSON | jq -r .BACKEND_JWT_STRING)
 
+          if [ -z "$DB_PASS" ] || [ -z "$JWT_TOKEN" ]; then
+            echo "ERROR: Application secrets missing from Secrets Manager"
+            exit 1
+          fi
+
           echo "Creating ConfigMap for DB Initialization Script..."
           kubectl create configmap db-init-script \
             --from-file=init.sql=database/init.sql \
             --dry-run=client -o yaml | kubectl apply -f -
 
           echo "Applying Manifests..."
-          envsubst < k8s/eks/secrets.yml | kubectl apply -f -
+          envsubst '${DB_PASS} ${JWT_TOKEN}' < k8s/eks/secrets.yml | kubectl apply -f -
 
           for i in {1..5}; do
             kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml && break || \
