@@ -32,13 +32,6 @@ module "eks" {
     coredns = {}
     vpc-cni = {
       before_compute = true # THE MOST IMPORTANT PART!! DO NOT FORGET OR YOU WILL SPEND HOURS DEBUGGING!!
-      configuration_values = jsonencode({
-        env = {
-          # Enable IP Prefix Delegation for more pods
-          ENABLE_PREFIX_DELEGATION = "true"
-          WARM_PREFIX_TARGET       = "1"
-        }
-      })
     }
     kube-proxy = {}
     eks-pod-identity-agent = {
