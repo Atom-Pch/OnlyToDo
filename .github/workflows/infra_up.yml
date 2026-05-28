@@ -13,7 +13,6 @@ env:
   BACKEND_REPO: "todo-backend-repo"
   PROMETHEUS_REPO: "todo-prom-repo"
   GRAFANA_REPO: "todo-graf-repo"
-  MISC_REPO: "todo-misc-repo"
 
 permissions:
   id-token: write
@@ -59,10 +58,6 @@ jobs:
 
       - name: Build and Push Images
         run: |
-          docker pull postgres:18-alpine
-          docker tag postgres:18-alpine $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$MISC_REPO:postgres-18-alpine
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$MISC_REPO:postgres-18-alpine
-
           docker build --provenance=false -t $FRONTEND_REPO ./frontend/
           docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
