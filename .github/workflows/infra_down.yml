@@ -49,8 +49,12 @@ jobs:
           echo "Get kubeconfig for EKS cluster..."
           aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
 
-          echo "Fetching ALB ARN before deletion..."
+          echo "Fetching ALB and VPC ID before deletion..."
           ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=todo-vpc" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
 
           if [ -n "$ALB_DNS" ]; then
             echo "ALB DNS found: $ALB_DNS. Proceeding with cleanup..."
@@ -70,6 +74,13 @@ jobs:
             sleep 30
           else
             echo "No ALB found in AWS. Skipping."
+          fi
+
+          if [ -n "$VPC_ID" ]; then
+            echo "VPC ID found: $VPC_ID. Proceeding with cleanup..."
+            aws ec2 delete-vpc --vpc-id $VPC_ID
+          else
+            echo "No VPC found in AWS. Skipping."
           fi
 
       - name: Terraform Destroy
