@@ -35,7 +35,7 @@ module "eks" {
       configuration_values = jsonencode({
         env = {
           # Enable IP Prefix Delegation for more pods
-          ENABLE_PREFIX_DELEGATION = true
+          ENABLE_PREFIX_DELEGATION = "true"
         }
       })
     }
