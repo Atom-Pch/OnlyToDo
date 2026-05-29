@@ -37,19 +37,24 @@ jobs:
           export PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
           export PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
 
-          echo "Updating DNS Record for ALB..."
+          echo "Parking Domain..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$PARK_DOMAIN\", \"ttl\": \"600\" }" \
             > /dev/null
           echo "Domain Parked Successfully."
 
+          curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/CNAME/*" \
+            -H "Content-Type: application/json" \
+            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"pixie.porkbun.com\", \"ttl\": \"600\" }"
+          echo "Sub-Domain Parked Successfully."
+
       - name: EKS Ingress Cleanup
         run: |
           echo "Get kubeconfig for EKS cluster..."
           aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
 
-          echo "Fetching ALB and VPC ID before deletion..."
+          echo "Fetching ALB DNS before deletion..."
           ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
           VPC_ID=$(aws ec2 describe-vpcs \
             --filters "Name=tag:Name,Values=todo-vpc" \
@@ -72,7 +77,7 @@ jobs:
             aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
 
             echo "ALB fully deleted from AWS! Clearing up..."
-            sleep 30
+            sleep 180
           else
             echo "No ALB found in AWS. Skipping."
           fi
@@ -87,5 +92,12 @@ jobs:
       - name: Terraform Destroy
         working-directory: iac/terraform/
         run: |
+          # echo "Excluding VPC.."
+          # terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
+
+          echo "Destroying the rest..."
           terraform init
           terraform destroy -auto-approve
+
+          # echo "NOW destroying VPC..."
+          # terraform destroy -auto-approve

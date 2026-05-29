@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 type Todo struct {
@@ -22,6 +22,9 @@ type Todo struct {
 }
 
 func (app *App) getTodos(w http.ResponseWriter, r *http.Request) {
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("getTodos"))
+	defer timer.ObserveDuration()
+
 	userID := r.Context().Value(userIDKey).(int)
 	rows, err := app.DB.Query("SELECT id, title, description, image_url, is_completed FROM todos WHERE user_id=$1", userID)
 
@@ -96,6 +99,9 @@ func (app *App) presignS3(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("createTodo"))
+	defer timer.ObserveDuration()
+
 	userID := r.Context().Value(userIDKey).(int)
 
 	var t Todo
@@ -136,6 +142,9 @@ func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("deleteTodo"))
+	defer timer.ObserveDuration()
+
 	userID := r.Context().Value(userIDKey).(int)
 	todoID := r.PathValue("id")
 	if todoID == "" {

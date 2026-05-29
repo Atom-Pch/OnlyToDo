@@ -11,9 +11,6 @@ env:
   CORE_TABLE_NAME: "users"
   FRONTEND_REPO: "todo-frontend-repo"
   BACKEND_REPO: "todo-backend-repo"
-  PROMETHEUS_REPO: "todo-prom-repo"
-  GRAFANA_REPO: "todo-graf-repo"
-  MISC_REPO: "todo-misc-repo"
 
 permissions:
   id-token: write
@@ -59,10 +56,6 @@ jobs:
 
       - name: Build and Push Images
         run: |
-          docker pull postgres:18-alpine
-          docker tag postgres:18-alpine $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$MISC_REPO:postgres-18-alpine
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$MISC_REPO:postgres-18-alpine
-
           docker build --provenance=false -t $FRONTEND_REPO ./frontend/
           docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
@@ -70,14 +63,6 @@ jobs:
           docker build --provenance=false -t $BACKEND_REPO ./backend/
           docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
-
-          docker build --provenance=false -t $PROMETHEUS_REPO ./mno/prometheus/
-          docker tag $PROMETHEUS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$PROMETHEUS_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$PROMETHEUS_REPO:latest
-
-          docker build --provenance=false -t $GRAFANA_REPO ./mno/grafana/
-          docker tag $GRAFANA_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
 
   deploy_application:
     needs: [initialize_infrastructure]
@@ -130,6 +115,34 @@ jobs:
           kubectl rollout status deployment aws-load-balancer-controller -n kube-system --timeout=1m
           echo "Controller is ready! Proceeding to application deployment."
 
+      - name: Install kube-prometheus-stack
+        run: |
+          echo "Creating monitoring namespace..."
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+          echo "Injecting Grafana Admin Username and Password from Secrets Manager..."
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export GRAFANA_USER=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_USER)
+          export GRAFANA_PASS=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
+
+          if [ -z "$GRAFANA_USER" ] || [ -z "$GRAFANA_PASS" ]; then
+            echo "ERROR: Grafana credentials missing from Secrets Manager"
+            exit 1
+          fi
+          envsubst < k8s/eks/monitoring-secrets.yml | kubectl apply -f -
+
+          echo "Installing kube-prometheus-stack Helm..."
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+          for i in {1..5}; do
+            helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
+              --namespace monitoring \
+              --version "85.2.0" \
+              -f k8s/eks/monitoring/values.yml && break || \
+            echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
+          done
+
       - name: Deploy Kubernetes Application
         run: |
           echo "Fetching Dynamic Secrets for K8s..."
@@ -141,18 +154,26 @@ jobs:
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export JWT_TOKEN=$(echo $SECRET_JSON | jq -r .BACKEND_JWT_STRING)
 
+          if [ -z "$DB_PASS" ] || [ -z "$JWT_TOKEN" ]; then
+            echo "ERROR: Application secrets missing from Secrets Manager"
+            exit 1
+          fi
+
           echo "Creating ConfigMap for DB Initialization Script..."
           kubectl create configmap db-init-script \
             --from-file=init.sql=database/init.sql \
             --dry-run=client -o yaml | kubectl apply -f -
 
           echo "Applying Manifests..."
-          envsubst < k8s/eks/secrets.yml | kubectl apply -f -
+          envsubst < k8s/eks/default-secrets.yml | kubectl apply -f -
 
           for i in {1..5}; do
             kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml && break || \
             echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
           done
+
+          echo "Applying grafana dashboard..."
+          kubectl apply -f k8s/eks/monitoring/graf-dash-cfm.yml
 
       - name: Wait for Load Balancer DNS
         run: |
@@ -175,6 +196,11 @@ jobs:
 
           echo "Updating DNS Record for ALB on Porkbun..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
+            -H "Content-Type: application/json" \
+            -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
+          echo "EKS ALB DNS Updated Successfully: $ALB_DNS."
+
+          curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/CNAME/*" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
           echo "EKS ALB DNS Updated Successfully: $ALB_DNS."

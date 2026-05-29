@@ -14,8 +14,6 @@ env:
   AWS_REGION: "us-east-2"
   FRONTEND_REPO: "todo-frontend-repo"
   BACKEND_REPO: "todo-backend-repo"
-  PROMETHEUS_REPO: "todo-prom-repo"
-  GRAFANA_REPO: "todo-graf-repo"
 
 permissions:
   id-token: write
@@ -67,11 +65,3 @@ jobs:
           docker build --provenance=false -t $BACKEND_REPO ./backend/
           docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
-
-          docker build --provenance=false -t $PROMETHEUS_REPO ./mno/prometheus/
-          docker tag $PROMETHEUS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$PROMETHEUS_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$PROMETHEUS_REPO:latest
-
-          docker build --provenance=false -t $GRAFANA_REPO ./mno/grafana/
-          docker tag $GRAFANA_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$GRAFANA_REPO:latest

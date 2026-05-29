@@ -24,18 +24,27 @@ var localhost_origin = []string{
 
 // Define the Prometheus Metrics
 var (
-	// Records how long requests take (Histogram)
 	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "http_request_duration_seconds",
 		Help:    "Duration of HTTP requests.",
 		Buckets: prometheus.DefBuckets,
 	}, []string{"method", "path"})
 
-	// Records the total number of requests (Counter)
 	httpRequestsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "http_requests_total",
 		Help: "Total number of HTTP requests.",
 	}, []string{"method", "path", "status"})
+
+	httpRequestsInFlight = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "http_requests_in_flight",
+		Help: "Current number of HTTP requests being served.",
+	})
+
+	dbQueryDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "db_query_duration_seconds",
+		Help:    "Duration of database queries.",
+		Buckets: []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1},
+	}, []string{"operation"})
 )
 
 // Create a custom ResponseWriter to capture the status code
@@ -115,24 +124,18 @@ func (app *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// 3. The Metrics Middleware
+// The Metrics Middleware
 func metricsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		httpRequestsInFlight.Inc()
+		defer httpRequestsInFlight.Dec()
+
 		start := time.Now()
-
-		// Wrap the response writer and default to 200 OK
 		sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
-
-		// Pass the request to the next handler (the actual API logic)
 		next.ServeHTTP(sw, r)
 
-		// Calculate how long the request took
 		duration := time.Since(start).Seconds()
-
-		// Extract the path (e.g., "/api/todos")
 		path := r.URL.Path
-
-		// Record the metrics!
 		httpDuration.WithLabelValues(r.Method, path).Observe(duration)
 		httpRequestsTotal.WithLabelValues(r.Method, path, strconv.Itoa(sw.status)).Inc()
 	})

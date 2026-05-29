@@ -1,0 +1,65 @@
+prometheus:
+  prometheusSpec:
+    # Watch ServiceMonitors across ALL namespaces
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    retention: 24h
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 128m
+      limits:
+        memory: 512Mi
+        cpu: 512m
+
+grafana:
+  admin:
+    existingSecret: todo-secrets-monitoring
+    userKey: admin-user
+    passwordKey: admin-password
+  persistence:
+    enabled: false # keep off to avoid EBS costs; dashboards come from configmaps
+  # Import your existing Go dashboard by its Grafana.com ID or embed it
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: custom
+          folder: Custom
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards/custom
+  dashboardsConfigMaps:
+    custom: grafana-dashboard
+
+  ingress:
+      enabled: true
+      ingressClassName: alb
+      annotations:
+        alb.ingress.kubernetes.io/scheme: internet-facing
+        alb.ingress.kubernetes.io/target-type: ip
+        alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:131912109503:certificate/3f2971ec-a640-4a4d-8c86-5a67a803d284
+        alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+        alb.ingress.kubernetes.io/ssl-redirect: '443'
+        alb.ingress.kubernetes.io/group.name: todo-shared-alb # Groups them together!
+      hosts:
+        - monitoring.onlytodo.xyz
+      paths:
+        - /*
+
+  grafana.ini:
+    auth.anonymous:
+      enabled: true
+      org_role: Viewer
+      # (Optional) Hides the version number at the bottom for a cleaner look
+      hide_version: true 
+
+alertmanager:
+  enabled: false # disable until you need it
+
+# These are on by default and give you free cluster metrics:
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true

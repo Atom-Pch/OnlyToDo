@@ -30,7 +30,7 @@ spec:
       serviceAccountName: backend-sa
       initContainers:
         - name: db-init
-          image: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-misc-repo:postgres-18-alpine
+          image: postgres:18-alpine
           env:
             # We reuse the exact same environment variables (and secrets!) as your backend
             - name: DB_HOST
@@ -44,7 +44,7 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets
+                  name: todo-secrets-default
                   key: db_pass
           command:
             - sh
@@ -106,12 +106,12 @@ spec:
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets
+                  name: todo-secrets-default
                   key: db_pass
             - name: JWT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets
+                  name: todo-secrets-default
                   key: jwt_token
 
           # Readiness and Liveness Probes
@@ -139,11 +139,18 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend
+  labels:
+    app: backend
 spec:
   selector:
     app: backend
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8080
       targetPort: 8080
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
   type: ClusterIP # ClusterIP means it's only accessible from inside the K8s cluster

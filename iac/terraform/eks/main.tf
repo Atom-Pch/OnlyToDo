@@ -29,13 +29,19 @@ module "eks" {
 
   # Core EKS Addons (Recommended in v21+)
   addons = {
-    coredns = {}
+    coredns = {
+      addon_version = "v1.14.2-eksbuild.4"
+    }
     vpc-cni = {
       before_compute = true # THE MOST IMPORTANT PART!! DO NOT FORGET OR YOU WILL SPEND HOURS DEBUGGING!!
+      addon_version  = "v1.21.2-eksbuild.2"
     }
-    kube-proxy = {}
+    kube-proxy = {
+      addon_version = "v1.35.3-eksbuild.8"
+    }
     eks-pod-identity-agent = {
       before_compute = true # THE MOST IMPORTANT PART!! DO NOT FORGET OR YOU WILL SPEND HOURS DEBUGGING!!
+      addon_version  = "v1.3.10-eksbuild.3"
     }
   }
 
@@ -52,7 +58,7 @@ module "eks" {
       # AL2023 is the default AMI type for EKS managed node groups starting 1.30
       ami_type = "AL2023_x86_64_STANDARD"
 
-      instance_types = ["t3.small"]
+      instance_types = ["c7i-flex.large"]
 
       min_size     = 1
       max_size     = 3

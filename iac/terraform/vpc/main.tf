@@ -57,6 +57,25 @@ module "vpce_sg" {
   egress_cidr_blocks = ["0.0.0.0/0"]
 }
 
+# NAT GATEWAY (fck-nat)
+module "fck_nat" {
+  source = "RaJiska/fck-nat/aws"
+
+  name      = "todo-fck-nat"
+  vpc_id    = module.vpc.vpc_id            # Replace with your actual VPC ID reference
+  subnet_id = module.vpc.public_subnets[0] # Must be placed in a public subnet
+  ha_mode   = true
+
+  instance_type = "t4g.micro"
+
+  # Automatically update the default route of your private subnets
+  update_route_tables = true
+  route_tables_ids = {
+    id1 = module.vpc.private_route_table_ids[0],
+    id2 = module.vpc.private_route_table_ids[1]
+  }
+}
+
 # VPC ENDPOINTS
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = module.vpc.vpc_id
