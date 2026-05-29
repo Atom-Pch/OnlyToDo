@@ -6,6 +6,9 @@ metadata:
   labels:
     release: kube-prom # must match the Helm release name
 spec:
+  namespaceSelector:
+    matchNames:
+      - default
   selector:
     matchLabels:
       app: backend

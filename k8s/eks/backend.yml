@@ -75,6 +75,7 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+            - containerPort: 9090 # For Prometheus Metrics
 
           # Resource Requests and Limits
           resources:
