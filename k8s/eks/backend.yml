@@ -83,8 +83,8 @@ spec:
               memory: 128Mi
               cpu: 256m
             limits:
-              memory: 256Mi
-              cpu: 512m
+              memory: 512Mi
+              cpu: 1024m
 
           env:
             # Later for EKS, we will move these to ConfigMaps and Secrets!
