@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,6 +17,11 @@ type Credentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+var authFailuresTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "auth_failures_total",
+	Help: "Total authentication failures.",
+}, []string{"reason"})
 
 func (app *App) registerUser(w http.ResponseWriter, r *http.Request) {
 	var creds Credentials
@@ -31,6 +38,7 @@ func (app *App) registerUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Failed to create user | "+err.Error(), http.StatusBadRequest)
+		authFailuresTotal.WithLabelValues("registration_failed").Inc()
 		return
 	}
 
@@ -46,12 +54,14 @@ func (app *App) loginUser(w http.ResponseWriter, r *http.Request) {
 	var userID int
 	err := app.DB.QueryRow("SELECT id, password_hash FROM users WHERE username=$1", creds.Username).Scan(&userID, &storedHash)
 	if err != nil {
-		http.Error(w, "Invalid credentials | "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, "Invalid user | "+err.Error(), http.StatusUnauthorized)
+		authFailuresTotal.WithLabelValues("invalid_user").Inc()
 		return
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(creds.Password)); err != nil {
 		http.Error(w, "Invalid credentials | "+err.Error(), http.StatusUnauthorized)
+		authFailuresTotal.WithLabelValues("invalid_credentials").Inc()
 		return
 	}
 
@@ -101,12 +111,14 @@ func (app *App) getCurrentUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil || !token.Valid {
 		http.Error(w, "Invalid session", http.StatusUnauthorized)
+		authFailuresTotal.WithLabelValues("Invalid session").Inc()
 		return
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		authFailuresTotal.WithLabelValues("Invalid token claims").Inc()
 		return
 	}
 
@@ -116,6 +128,7 @@ func (app *App) getCurrentUser(w http.ResponseWriter, r *http.Request) {
 	err = app.DB.QueryRow("SELECT username FROM users WHERE id=$1", userID).Scan(&username)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
+		authFailuresTotal.WithLabelValues("user_not_found").Inc()
 		return
 	}
 

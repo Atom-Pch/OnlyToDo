@@ -4,14 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"log"
-	"net/http"
-	"os"
 )
 
 // App holds our external dependencies so all our routes can access them
@@ -55,6 +58,17 @@ func main() {
 		log.Println(v)
 	}
 
+	// Expose DB connection stats as Prometheus metrics
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "db_open_connections",
+		Help: "Number of open DB connections.",
+	}, func() float64 { return float64(db.Stats().OpenConnections) })
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "db_in_use_connections",
+		Help: "Number of DB connections in use.",
+	}, func() float64 { return float64(db.Stats().InUse) })
+
 	// 2. Initialize AWS S3
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -90,8 +104,10 @@ func main() {
 	mux.HandleFunc("GET /api/todos/s3-presign", app.requireAuth(app.presignS3))
 
 	// Expose Prometheus Metrics ---
-	// Notice we DO NOT wrap this in requireAuth, because Prometheus needs to read it without a login!
-	mux.Handle("GET /metrics", promhttp.Handler())
+	go func() {
+		mux.Handle("/metrics", promhttp.Handler())
+		log.Fatal(http.ListenAndServe(":9090", mux))
+	}()
 
 	// 5. Start Server
 	port := os.Getenv("PORT")

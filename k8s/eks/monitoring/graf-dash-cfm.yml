@@ -4,7 +4,7 @@ metadata:
   name: grafana-dashboard
   namespace: monitoring
   labels:
-    grafana_dashboard: '1'
+    grafana_dashboard: "1"
 data:
   go_dashboard.json: |-
     {
@@ -770,110 +770,6 @@ data:
                 }
             ],
             "title":"Rate of Objects Allocated",
-            "type":"timeseries"
-          },
-          {
-            "datasource":{
-                "type":"prometheus"
-            },
-            "description":"go_memstats_lookups_total – counts how many pointer dereferences happened. This is a counter value so you can use rate() to lookups/s.",
-            "fieldConfig":{
-                "defaults":{
-                  "color":{
-                      "mode":"palette-classic"
-                  },
-                  "custom":{
-                      "axisBorderShow":false,
-                      "axisCenteredZero":false,
-                      "axisColorMode":"text",
-                      "axisLabel":"",
-                      "axisPlacement":"auto",
-                      "barAlignment":0,
-                      "barWidthFactor":0.6,
-                      "drawStyle":"line",
-                      "fillOpacity":10,
-                      "gradientMode":"none",
-                      "hideFrom":{
-                        "legend":false,
-                        "tooltip":false,
-                        "viz":false
-                      },
-                      "insertNulls":false,
-                      "lineInterpolation":"linear",
-                      "lineWidth":1,
-                      "pointSize":5,
-                      "scaleDistribution":{
-                        "type":"linear"
-                      },
-                      "showPoints":"never",
-                      "spanNulls":false,
-                      "stacking":{
-                        "group":"A",
-                        "mode":"none"
-                      },
-                      "thresholdsStyle":{
-                        "mode":"off"
-                      }
-                  },
-                  "mappings":[
-                      
-                  ],
-                  "thresholds":{
-                      "mode":"absolute",
-                      "steps":[
-                        {
-                            "color":"green"
-                        },
-                        {
-                            "color":"red",
-                            "value":80
-                        }
-                      ]
-                  },
-                  "unit":"ops"
-                },
-                "overrides":[
-                  
-                ]
-            },
-            "gridPos":{
-                "h":8,
-                "w":12,
-                "x":0,
-                "y":24
-            },
-            "id":18,
-            "options":{
-                "dataLinks":[
-                  
-                ],
-                "legend":{
-                  "calcs":[
-                      
-                  ],
-                  "displayMode":"list",
-                  "placement":"bottom",
-                  "showLegend":true
-                },
-                "tooltip":{
-                  "hideZeros":false,
-                  "mode":"multi",
-                  "sort":"none"
-                }
-            },
-            "pluginVersion":"12.0.1",
-            "targets":[
-                {
-                  "datasource":{
-                      "type":"prometheus"
-                  },
-                  "expr":"rate(go_memstats_lookups_total{job=\"$job\", instance=~\"$instance\"}[1m])",
-                  "format":"time_series",
-                  "intervalFactor":1,
-                  "refId":"A"
-                }
-            ],
-            "title":"Rate of a Pointer Dereferences",
             "type":"timeseries"
           },
           {

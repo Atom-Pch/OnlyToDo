@@ -1,0 +1,48 @@
+# k8s/eks/monitoring/alerts.yml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: todo-app-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prom
+spec:
+  groups:
+    - name: todo-app
+      rules:
+        - alert: HighErrorRate
+          expr: |
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            / sum(rate(http_requests_total[5m])) > 0.05
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Error rate above 5%"
+
+        - alert: HighP99Latency
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket[5m])) by (le, path)
+            ) > 1.0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "p99 latency above 1s on {{ $labels.path }}"
+
+        - alert: DBConnectionPoolSaturated
+          expr: db_in_use_connections / db_open_connections > 0.75
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "DB connection pool >75% utilized"
+
+        - alert: HighAuthFailureRate
+          expr: rate(auth_failures_total{reason="invalid_credentials"}[5m]) > 0.5
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High authentication failure rate"
