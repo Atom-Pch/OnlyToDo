@@ -5,6 +5,10 @@ import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	esbuild: {
+		// This drops console statements using the default esbuild minifier
+		drop: ['console', 'debugger']
+	} as any,
 	test: {
 		expect: { requireAssertions: true },
 		projects: [
