@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"regexp"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -124,6 +125,12 @@ func (app *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+var numericSegment = regexp.MustCompile(`/\d+`)
+
+func normalizePath(path string) string {
+    return numericSegment.ReplaceAllString(path, "/{id}")
+}
+
 // The Metrics Middleware
 func metricsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +142,7 @@ func metricsMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(sw, r)
 
 		duration := time.Since(start).Seconds()
-		path := r.URL.Path
+		path := normalizePath(r.URL.Path)
 		httpDuration.WithLabelValues(r.Method, path).Observe(duration)
 		httpRequestsTotal.WithLabelValues(r.Method, path, strconv.Itoa(sw.status)).Inc()
 	})
