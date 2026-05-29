@@ -105,7 +105,7 @@ func main() {
 
 	// Expose Prometheus Metrics ---
 	go func() {
-		mux.Handle("/metrics", promhttp.Handler())
+		mux.Handle("GET /metrics", promhttp.Handler())
 		log.Fatal(http.ListenAndServe(":9090", mux))
 	}()
 
