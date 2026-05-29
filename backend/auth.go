@@ -33,8 +33,10 @@ func (app *App) registerUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("registerUser"))
 	_, err = app.DB.Exec("INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)",
 		creds.Username, creds.Email, string(hashedPassword))
+	timer.ObserveDuration()
 
 	if err != nil {
 		http.Error(w, "Failed to create user | "+err.Error(), http.StatusBadRequest)
@@ -52,7 +54,11 @@ func (app *App) loginUser(w http.ResponseWriter, r *http.Request) {
 
 	var storedHash string
 	var userID int
+
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("loginUser"))
 	err := app.DB.QueryRow("SELECT id, password_hash FROM users WHERE username=$1", creds.Username).Scan(&userID, &storedHash)
+	timer.ObserveDuration()
+
 	if err != nil {
 		http.Error(w, "Invalid user | "+err.Error(), http.StatusUnauthorized)
 		authFailuresTotal.WithLabelValues("invalid_user").Inc()
@@ -125,7 +131,11 @@ func (app *App) getCurrentUser(w http.ResponseWriter, r *http.Request) {
 	userID := int(claims["user_id"].(float64))
 
 	var username string
+
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("getCurrentUser"))
 	err = app.DB.QueryRow("SELECT username FROM users WHERE id=$1", userID).Scan(&username)
+	timer.ObserveDuration()
+
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		authFailuresTotal.WithLabelValues("user_not_found").Inc()

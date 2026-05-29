@@ -22,11 +22,11 @@ type Todo struct {
 }
 
 func (app *App) getTodos(w http.ResponseWriter, r *http.Request) {
-	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("getTodos"))
-	defer timer.ObserveDuration()
-
 	userID := r.Context().Value(userIDKey).(int)
+
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("getTodos"))
 	rows, err := app.DB.Query("SELECT id, title, description, image_url, is_completed FROM todos WHERE user_id=$1", userID)
+	timer.ObserveDuration()
 
 	if err != nil {
 		http.Error(w, "Failed to query database | "+err.Error(), http.StatusInternalServerError)
@@ -99,9 +99,6 @@ func (app *App) presignS3(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
-	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("createTodo"))
-	defer timer.ObserveDuration()
-
 	userID := r.Context().Value(userIDKey).(int)
 
 	var t Todo
@@ -110,10 +107,12 @@ func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("createTodo"))
 	err := app.DB.QueryRow(
 		"INSERT INTO todos (user_id, title, description, image_url) VALUES ($1, $2, $3, $4) RETURNING id",
 		userID, t.Title, t.Description, t.ImageURL,
 	).Scan(&t.ID)
+	timer.ObserveDuration()
 
 	if err != nil {
 		http.Error(w, "Failed to create To-Do | "+err.Error(), http.StatusInternalServerError)
@@ -142,9 +141,6 @@ func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
-	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("deleteTodo"))
-	defer timer.ObserveDuration()
-
 	userID := r.Context().Value(userIDKey).(int)
 	todoID := r.PathValue("id")
 	if todoID == "" {
@@ -165,7 +161,10 @@ func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
 		todoTitle = "Unknown | " + err.Error()
 	}
 
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("deleteTodo"))
 	result, err := app.DB.Exec("DELETE FROM todos WHERE id = $1 AND user_id = $2", todoID, userID)
+	timer.ObserveDuration()
+
 	if err != nil {
 		http.Error(w, "Failed to delete To-Do | "+err.Error(), http.StatusInternalServerError)
 		return
