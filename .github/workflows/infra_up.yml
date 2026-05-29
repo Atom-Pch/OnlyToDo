@@ -143,6 +143,9 @@ jobs:
             echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
           done
 
+          echo "Applying Custom Prometheus Alerting Rules..."
+          kubectl apply -f k8s/eks/monitoring/alerts.yml
+
       - name: Deploy Kubernetes Application
         run: |
           echo "Fetching Dynamic Secrets for K8s..."
