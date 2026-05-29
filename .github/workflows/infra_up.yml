@@ -38,7 +38,7 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
-  build_and_push_images:
+  build_and_push_frontend_images:
     needs: [initialize_infrastructure]
     runs-on: ubuntu-22.04
     steps:
@@ -60,12 +60,30 @@ jobs:
           docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
 
+  build_and_push_backend_images:
+    needs: [initialize_infrastructure]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Images
+        run: |
           docker build --provenance=false -t $BACKEND_REPO ./backend/
           docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
 
   deploy_application:
-    needs: [initialize_infrastructure]
+    needs: [build_and_push_frontend_images, build_and_push_backend_images]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
@@ -136,12 +154,24 @@ jobs:
           helm repo update
 
           for i in {1..5}; do
-            helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
+            if helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
               --namespace monitoring \
               --version "85.2.0" \
-              -f k8s/eks/monitoring/values.yml && break || \
-            echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
+              -f k8s/eks/monitoring/values.yml; then
+              break
+            fi
+
+            if [ $i -eq 5 ]; then
+              echo "ERROR: Helm upgrade failed after 5 attempts."
+              exit 1
+            fi
+
+            echo "Webhook not ready, retrying in 5 seconds..."
+            sleep 5
           done
+
+          echo "Applying backend service monitoring..."
+          kubectl apply -f k8s/eks/monitoring/backend-svcmon.yml
 
           echo "Applying Custom Prometheus Alerting Rules..."
           kubectl apply -f k8s/eks/monitoring/alerts.yml
@@ -171,8 +201,17 @@ jobs:
           envsubst < k8s/eks/default-secrets.yml | kubectl apply -f -
 
           for i in {1..5}; do
-            kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml && break || \
-            echo "Webhook not ready, retrying in 5 seconds..." && sleep 5
+            if kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml; then
+              break
+            fi
+
+            if [ $i -eq 5 ]; then
+              echo "ERROR: Failed to apply manifests after 5 attempts."
+              exit 1
+            fi
+
+            echo "Webhook not ready, retrying in 5 seconds..."
+            sleep 5
           done
 
           echo "Applying grafana dashboard..."
