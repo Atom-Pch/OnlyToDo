@@ -62,9 +62,9 @@ alertmanager:
     receivers:
       - name: "null"
 
-# These are on by default and give you free cluster metrics:
-nodeExporter:
-  enabled: true
+# Possible false positives
+kubeControllerManager:
+  enabled: false
 
-kubeStateMetrics:
-  enabled: true
+kubeScheduler:
+  enabled: false
