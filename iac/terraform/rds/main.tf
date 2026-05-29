@@ -26,6 +26,11 @@ module "rds" {
 
   skip_final_snapshot         = true
   manage_master_user_password = true
+
+  # Backup config
+  backup_retention_period          = 1 # Must be > 0 to enable backups
+  backup_window                    = "18:00-21:00"
+  final_snapshot_identifier_prefix = "todo-dbsnap"
 }
 
 # SECURITY GROUP #
