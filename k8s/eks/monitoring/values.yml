@@ -53,9 +53,6 @@ grafana:
       org_role: Viewer
       # (Optional) Hides the version number at the bottom for a cleaner look
       hide_version: true 
-    # (Optional) If you want to completely hide the login button from visitors
-    auth:
-      disable_login_form: true
 
 alertmanager:
   enabled: false # disable until you need it
