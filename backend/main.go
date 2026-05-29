@@ -105,8 +105,11 @@ func main() {
 
 	// Expose Prometheus Metrics ---
 	go func() {
-		mux.Handle("GET /metrics", promhttp.Handler())
-		log.Fatal(http.ListenAndServe(":9090", mux))
+		metricsMux := http.NewServeMux()
+		metricsMux.Handle("GET /metrics", promhttp.Handler())
+
+		log.Println("Metrics server starting on port 9090...")
+		log.Fatal(http.ListenAndServe(":9090", metricsMux))
 	}()
 
 	// 5. Start Server
