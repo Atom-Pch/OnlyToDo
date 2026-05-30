@@ -1,5 +1,4 @@
 variable "aws_region" {
-  description = "AWS region"
   default     = "us-east-2"
 }
 variable "todo-app-secret-arn" {
@@ -7,4 +6,7 @@ variable "todo-app-secret-arn" {
 }
 variable "vpc_cidr" {
   default = "10.0.0.0/20"
+}
+variable "my_ip" {
+  sensitive   = true
 }
