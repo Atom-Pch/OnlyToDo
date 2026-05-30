@@ -77,6 +77,10 @@ jobs:
       - name: Terraform Destroy
         working-directory: iac/terraform/
         run: |
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=todo-vpc" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
           terraform init
 
           echo "Excluding VPC.."
@@ -86,4 +90,5 @@ jobs:
           terraform destroy -auto-approve
 
           echo "NOW destroying VPC..."
+          terraform import module.vpc.module.vpc.aws_vpc.this[0] $VPC_ID
           terraform destroy -auto-approve
