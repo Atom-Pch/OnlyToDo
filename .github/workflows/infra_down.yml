@@ -56,10 +56,6 @@ jobs:
 
           echo "Fetching ALB DNS before deletion..."
           ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
-          VPC_ID=$(aws ec2 describe-vpcs \
-            --filters "Name=tag:Name,Values=todo-vpc" \
-            --query 'Vpcs[0].VpcId' \
-            --output text)
 
           if [ -n "$ALB_DNS" ]; then
             echo "ALB DNS found: $ALB_DNS. Proceeding with cleanup..."
