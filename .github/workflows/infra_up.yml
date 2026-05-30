@@ -147,7 +147,7 @@ jobs:
             echo "ERROR: Grafana credentials missing from Secrets Manager"
             exit 1
           fi
-          envsubst '$GRAFANA_USER $GRAFANA_PASS' < k8s/eks/monitoring-secrets.yml | kubectl apply -f -
+          envsubst '$GRAFANA_USER $GRAFANA_PASS' < k8s/eks/secrets/monitoring-secrets.yml | kubectl apply -f -
 
           echo "Integrating Discord alerts..."
           export DISCORD_WEBHOOK=$(echo $SECRET_JSON | jq -r .DISCORD_WEBHOOK)
@@ -156,7 +156,7 @@ jobs:
             echo "ERROR: Discord webhook URL missing from Secrets Manager"
             exit 1
           fi
-          envsubst '$DISCORD_WEBHOOK' < k8s/eks/alert-secrets.yml | kubectl apply -f -
+          envsubst '$DISCORD_WEBHOOK' < k8s/eks/secrets/alert-secrets.yml | kubectl apply -f -
 
           echo "Installing kube-prometheus-stack Helm..."
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -207,7 +207,7 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
           echo "Applying Manifests..."
-          envsubst < k8s/eks/default-secrets.yml | kubectl apply -f -
+          envsubst < k8s/eks/secrets/default-secrets.yml | kubectl apply -f -
 
           for i in {1..5}; do
             if kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml; then
