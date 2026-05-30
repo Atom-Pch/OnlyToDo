@@ -85,11 +85,11 @@ alertmanager:
     receivers:
       - name: "null"
       - name: discord
-        discord_configs:
-          - webhook_url_file: /etc/alertmanager/secrets/todo-secrets-alert/discord-webhook
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/todo-secrets-alert/discord-webhook
             send_resolved: true
             title: '{{ if eq .Status "firing" }}🔥{{ else }}✅{{ end }} [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
-            message: |
+            text: |
               {{ range .Alerts }}
               **Severity:** {{ .Labels.severity }}
               **Namespace:** {{ .Labels.namespace }}
