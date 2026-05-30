@@ -47,8 +47,7 @@ module "eks" {
 
   # Gives you local kubectl access
   endpoint_public_access  = true
-  endpoint_private_access = false # True if using VPC endpoints
-  endpoint_public_access_cidrs = [var.my_ip]
+  endpoint_private_access = true
 
   # Utilizes the new Cluster Access Entry API to grant you admin rights
   enable_cluster_creator_admin_permissions = true
