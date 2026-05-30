@@ -152,7 +152,7 @@ jobs:
           echo "Integrating Discord alerts..."
           export DISCORD_WEBHOOK=$(echo $SECRET_JSON | jq -r .DISCORD_WEBHOOK)
 
-          if [ -z "$DISCORD_WEBHOOK" ] ]; then
+          if [ -z "$DISCORD_WEBHOOK" ]; then
             echo "ERROR: Discord webhook URL missing from Secrets Manager"
             exit 1
           fi
