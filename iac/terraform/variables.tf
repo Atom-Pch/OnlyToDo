@@ -7,3 +7,6 @@ variable "todo-app-secret-arn" {
 variable "vpc_cidr" {
   default = "10.0.0.0/20"
 }
+variable "my_ip" {
+  sensitive   = true
+}
