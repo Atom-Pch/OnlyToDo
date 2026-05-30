@@ -37,19 +37,6 @@ module "frontend_repo" {
         action = {
           type = "expire"
         }
-      },
-      {
-        rulePriority = 2,
-        description  = "Keep last 10 version images",
-        selection = {
-          tagStatus     = "tagged",
-          tagPrefixList = ["v"],
-          countType     = "imageCountMoreThan",
-          countNumber   = 10
-        },
-        action = {
-          type = "expire"
-        }
       }
     ]
   })
@@ -81,19 +68,6 @@ module "backend_repo" {
           tagStatus   = "untagged",
           countType   = "imageCountMoreThan",
           countNumber = 1
-        },
-        action = {
-          type = "expire"
-        }
-      },
-      {
-        rulePriority = 2,
-        description  = "Keep last 10 version images",
-        selection = {
-          tagStatus     = "tagged",
-          tagPrefixList = ["v"],
-          countType     = "imageCountMoreThan",
-          countNumber   = 10
         },
         action = {
           type = "expire"
