@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: todo-backend
+  namespace: argocd
+  annotations:
+    # Image Updater watches this image and updates values.yaml when new tag arrives
+    argocd-image-updater.argoproj.io/image-list: backend=131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-backend-repo
+    argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/backend.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/backend.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Atom-Pch/OnlyToDo.git
+    targetRevision: main
+    path: gitops/charts/backend
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true

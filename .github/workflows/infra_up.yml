@@ -133,6 +133,61 @@ jobs:
           kubectl rollout status deployment aws-load-balancer-controller -n kube-system --timeout=1m
           echo "Controller is ready! Proceeding to application deployment."
 
+      - name: Install Argo CD, Image Updater, and Applications
+        run: |
+          echo "Creating Argo CD namespace..."
+          kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update argo
+
+          echo "Installing Argo CD Helm Chart..."
+          for i in {1..5}; do
+            if helm upgrade -i argocd argo/argo-cd \
+              --namespace argocd \
+              --version 9.5.15 \
+              -f k8s/eks/argocd/values.yml; then
+              echo "Helm argo/argo-cd install successful!"
+              break
+            fi
+
+            if [ $i -eq 5 ]; then
+              echo "ERROR: Helm argo/argo-cd install failed after 5 attempts."
+              exit 1
+            fi
+
+            echo "Webhook not ready, retrying in 5 seconds..."
+            sleep 5
+          done
+          
+          for i in {1..5}; do
+            if helm upgrade -i argocd-image-updater argo/argocd-image-updater \
+              --namespace argocd \
+              --version 1.2.1 \
+              --set config.argocd.serverAddress=http://argocd-server.argocd.svc.cluster.local \
+              --set config.argocd.insecure=true \
+              --set config.argocd.grpcWeb=true \
+              --set config.registries[0].name=ECR \
+              --set config.registries[0].prefix="131912109503.dkr.ecr.us-east-2.amazonaws.com" \
+              --set config.registries[0].api_url="https://131912109503.dkr.ecr.us-east-2.amazonaws.com" \
+              --set config.registries[0].credentials="ext:/usr/local/bin/aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 131912109503.dkr.ecr.us-east-2.amazonaws.com" \
+              --set config.registries[0].credsexpire=9h; then
+                echo "Helm argo/argocd-image-updater install successful!"
+                break
+              fi
+
+            if [ $i -eq 5 ]; then
+              echo "ERROR: Helm argo/argocd-image-updater install failed after 5 attempts."
+              exit 1
+            fi
+
+            echo "Webhook not ready, retrying in 5 seconds..."
+            sleep 5
+          done
+
+          echo "Applying Argo CD Applications for Frontend and Backend..."
+          kubectl apply -f k8s/eks/argocd/apps/
+
       - name: Install kube-prometheus-stack
         run: |
           echo "Creating monitoring namespace..."
@@ -167,12 +222,12 @@ jobs:
               --namespace monitoring \
               --version "85.2.0" \
               -f k8s/eks/monitoring/values.yml; then
-              echo "Helm prometheus-community/kube-prometheus-stack upgrade successful!"
+              echo "Helm prometheus-community/kube-prometheus-stack install successful!"
               break
             fi
 
             if [ $i -eq 5 ]; then
-              echo "ERROR: Helm upgrade failed after 5 attempts."
+              echo "ERROR: Helm prometheus-community/kube-prometheus-stack install failed after 5 attempts."
               exit 1
             fi
 
@@ -214,15 +269,13 @@ jobs:
           export BACKEND_IMG_TAG=${GITHUB_SHA::7}
 
           for i in {1..5}; do
-            if envsubst '$FRONTEND_IMG_TAG' < k8s/eks/frontend.yml | kubectl apply -f - && \
-               envsubst '$BACKEND_IMG_TAG' < k8s/eks/backend.yml | kubectl apply -f - && \
-               kubectl apply -f k8s/eks/ingress.yml; then
-              echo "Manifests applied successfully!"
+            if kubectl apply -f k8s/eks/ingress.yml; then
+              echo "Ingress applied successfully!"
               break
             fi
 
             if [ $i -eq 5 ]; then
-              echo "ERROR: Failed to apply manifests after 5 attempts."
+              echo "ERROR: Failed to apply Ingress after 5 attempts."
               exit 1
             fi
 
