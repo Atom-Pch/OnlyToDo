@@ -14,7 +14,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/Atom-Pch/TodoWebApp.git
+    repoURL: https://github.com/Atom-Pch/OnlyToDo.git
     targetRevision: main
     path: gitops/charts/frontend
     helm:
