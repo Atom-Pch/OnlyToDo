@@ -23,10 +23,6 @@ spec:
     spec:
       containers:
         - name: frontend
-          # Minikube
-          # image: todo-frontend:latest
-          # imagePullPolicy: Never # Forces Minikube to use the local image
-          # ECR
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: Always
           ports:
