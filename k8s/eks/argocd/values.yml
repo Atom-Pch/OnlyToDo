@@ -18,8 +18,8 @@ server:
       alb.ingress.kubernetes.io/ssl-redirect: "443"
       alb.ingress.kubernetes.io/group.name: todo-shared-alb # shares your existing ALB
       alb.ingress.kubernetes.io/group.order: "20"
-    hosts:
-      - argocd.onlytodo.xyz
+    hostname: argocd.onlytodo.xyz
+    path: /*
 
 controller:
   replicas: 1
