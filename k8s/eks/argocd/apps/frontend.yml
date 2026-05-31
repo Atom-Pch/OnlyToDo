@@ -19,7 +19,7 @@ spec:
     path: gitops/charts/frontend
     helm:
       valueFiles:
-        - values.yaml
+        - values.yml
   destination:
     server: https://kubernetes.default.svc
     namespace: default
