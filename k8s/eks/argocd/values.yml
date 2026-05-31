@@ -20,8 +20,6 @@ server:
       alb.ingress.kubernetes.io/group.order: "20"
     hosts:
       - argocd.onlytodo.xyz
-    paths:
-      - /*
 
 controller:
   replicas: 1
