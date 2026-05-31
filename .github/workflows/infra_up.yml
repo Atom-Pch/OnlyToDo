@@ -57,10 +57,8 @@ jobs:
       - name: Build and Push Images
         run: |
           docker build --provenance=false -t $FRONTEND_REPO ./frontend/
-          docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
           docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${GITHUB_SHA::7}
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${GITHUB_SHA::7}
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${GITHUB_SHA::7}  
 
   build_and_push_backend_images:
     needs: [initialize_infrastructure]
@@ -81,10 +79,8 @@ jobs:
       - name: Build and Push Images
         run: |
           docker build --provenance=false -t $BACKEND_REPO ./backend/
-          docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
           docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${GITHUB_SHA::7}
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${GITHUB_SHA::7}
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
 
   deploy_application:
     needs: [build_and_push_frontend_images, build_and_push_backend_images]
@@ -213,8 +209,19 @@ jobs:
           echo "Applying Manifests..."
           envsubst < k8s/eks/secrets/default-secrets.yml | kubectl apply -f -
 
+          export FRONTEND_IMG_TAG=${GITHUB_SHA::7}
+          export BACKEND_IMG_TAG=${GITHUB_SHA::7}
+
           for i in {1..5}; do
-            if kubectl apply -f k8s/eks/frontend.yml -f k8s/eks/backend.yml -f k8s/eks/ingress.yml; then
+            if envsubst '$FRONTEND_IMG_TAG' < k8s/eks/frontend.yml | kubectl apply -f -; then
+              break
+            fi
+
+            if envsubst '$BACKEND_IMG_TAG' < k8s/eks/backend.yml | kubectl apply -f -; then
+              break
+            fi
+
+            if kubectl apply -f k8s/eks/ingress.yml; then
               break
             fi
 

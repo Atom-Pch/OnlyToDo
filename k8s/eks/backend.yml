@@ -71,7 +71,7 @@ spec:
           # image: todo-backend:latest
           # imagePullPolicy: Never # Forces Minikube to use the local image
           # ECR
-          image: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-backend-repo:latest
+          image: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-backend-repo:${BACKEND_IMG_TAG}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
