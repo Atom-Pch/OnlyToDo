@@ -113,6 +113,7 @@ resource "aws_iam_policy" "backend_s3" {
   })
 }
 
+# POD IDENTITY CONFIGS
 # Use the exact same module to bind it to your backend
 module "backend_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
@@ -128,6 +129,44 @@ module "backend_pod_identity" {
       cluster_name    = module.eks.cluster_name
       namespace       = "default"
       service_account = "backend-sa" # MUST match your backend.yml
+    }
+  }
+}
+
+resource "aws_iam_policy" "argocd_image_updater_ecr" {
+  name = "todo-argocd-image-updater-ecr"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:DescribeImages",
+          "ecr:ListImages"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+module "argocd_image_updater_pod_identity" {
+  source  = "terraform-aws-modules/eks-pod-identity/aws"
+  version = ">= 1.12.1"
+
+  name                   = "todo-argocd-image-updater"
+  additional_policy_arns = { ecr = aws_iam_policy.argocd_image_updater_ecr.arn }
+
+  associations = {
+    image_updater = {
+      cluster_name    = module.eks.cluster_name
+      namespace       = "argocd"
+      service_account = "argocd-image-updater-sa"
     }
   }
 }
