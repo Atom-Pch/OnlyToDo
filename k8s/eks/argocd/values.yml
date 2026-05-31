@@ -1,0 +1,40 @@
+global:
+  image:
+    tag: v3.4.2
+
+server:
+  # CRITICAL: TLS terminates at ALB, so argocd-server runs in HTTP mode
+  extraArgs:
+    - --insecure
+  replicas: 2
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:131912109503:certificate/3f2971ec-a640-4a4d-8c86-5a67a803d284
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+      alb.ingress.kubernetes.io/group.name: todo-shared-alb # shares your existing ALB
+    hosts:
+      - argocd.onlytodo.xyz
+    paths:
+      - /*
+
+controller:
+  replicas: 1
+
+repoServer:
+  replicas: 2
+
+configs:
+  params:
+    server.insecure: true # redundant safety net alongside --insecure
+
+  # Tell Argo CD your GitHub repo needs no credentials (public) or add a secret here
+  repositories:
+    todo-app:
+      url: https://github.com/Atom-Pch/OnlyToDo
+      name: todo-app
+      type: git

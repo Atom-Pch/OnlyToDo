@@ -133,6 +133,33 @@ jobs:
           kubectl rollout status deployment aws-load-balancer-controller -n kube-system --timeout=1m
           echo "Controller is ready! Proceeding to application deployment."
 
+      - name: Install Argo CD
+        run: |
+          echo "Creating Argo CD namespace..."
+          kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update argo
+
+          echo "Installing Argo CD Helm Chart..."
+          for i in {1..5}; do
+            if helm upgrade -i argocd argo/argo-cd \
+              --namespace argocd \
+              --version 9.5.15 \
+              -f k8s/eks/argocd/values.yml; then
+              echo "Helm argo/argo-cd install successful!"
+              break
+            fi
+
+            if [ $i -eq 5 ]; then
+              echo "ERROR: Helm install failed after 5 attempts."
+              exit 1
+            fi
+
+            echo "Webhook not ready, retrying in 5 seconds..."
+            sleep 5
+          done
+
       - name: Install kube-prometheus-stack
         run: |
           echo "Creating monitoring namespace..."
@@ -167,12 +194,12 @@ jobs:
               --namespace monitoring \
               --version "85.2.0" \
               -f k8s/eks/monitoring/values.yml; then
-              echo "Helm prometheus-community/kube-prometheus-stack upgrade successful!"
+              echo "Helm prometheus-community/kube-prometheus-stack install successful!"
               break
             fi
 
             if [ $i -eq 5 ]; then
-              echo "ERROR: Helm upgrade failed after 5 attempts."
+              echo "ERROR: Helm install failed after 5 attempts."
               exit 1
             fi
 
