@@ -160,6 +160,20 @@ jobs:
             sleep 5
           done
 
+      - name: Install Argo CD Image Updater
+        run: |
+          helm upgrade -i argocd-image-updater argo/argocd-image-updater \
+            --namespace argocd \
+            --version 1.2.1 \
+            --set config.argocd.serverAddress=http://argocd-server.argocd.svc.cluster.local \
+            --set config.argocd.insecure=true \
+            --set config.argocd.grpcWeb=true \
+            --set config.registries[0].name=ECR \
+            --set config.registries[0].prefix="131912109503.dkr.ecr.us-east-2.amazonaws.com" \
+            --set config.registries[0].api_url="https://131912109503.dkr.ecr.us-east-2.amazonaws.com" \
+            --set config.registries[0].credentials="ext:/usr/local/bin/aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 131912109503.dkr.ecr.us-east-2.amazonaws.com" \
+            --set config.registries[0].credsexpire=9h \
+
       - name: Install kube-prometheus-stack
         run: |
           echo "Creating monitoring namespace..."
