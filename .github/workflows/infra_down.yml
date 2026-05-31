@@ -77,7 +77,14 @@ jobs:
       - name: Terraform Destroy
         working-directory: iac/terraform/
         run: |
-          echo "Get VPC resources..."
+          echo "Excluding VPC.."
+          terraform init
+          terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
+
+          echo "Destroying the rest..."
+          terraform destroy -auto-approve
+
+          echo "Now destroying leftover resources..."
           VPC_ID=$(aws ec2 describe-vpcs \
             --filters "Name=tag:Name,Values=todo-vpc" \
             --query 'Vpcs[0].VpcId' \
@@ -89,14 +96,6 @@ jobs:
             --query "SecurityGroups[?GroupName!='default'].GroupId | [1]" \
             --output text)
 
-          echo "Excluding VPC.."
-          terraform init
-          terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
-
-          echo "Destroying the rest..."
-          terraform destroy -auto-approve
-
-          echo "Now destroying leftover resources..."
           aws ec2 delete-security-group --group-id $SEC_GRP_ID1
           aws ec2 delete-security-group --group-id $SEC_GRP_ID2
           aws ec2 delete-vpc --vpc-id $VPC_ID
