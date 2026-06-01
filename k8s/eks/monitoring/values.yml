@@ -14,7 +14,7 @@ prometheus:
 
 grafana:
   admin:
-    existingSecret: todo-secrets-monitoring
+    existingSecret: todo-secrets-grafana
     userKey: admin-user
     passwordKey: admin-password
   persistence:
