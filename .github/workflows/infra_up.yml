@@ -143,6 +143,16 @@ jobs:
           echo "Creating Argo CD namespace..."
           kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 
+          echo "Getting ArgoCD Github permissions..."
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export GITHUB_TOKEN=$(echo $SECRET_JSON | jq -r .GITHUB_TOKEN)
+
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "ERROR: Github token missing from Secrets Manager"
+            exit 1
+          fi
+          envsubst '$GITHUB_TOKEN' < k8s/eks/secrets/argocd-secrets.yml | kubectl apply -f -
+
           helm repo add argo https://argoproj.github.io/argo-helm
           helm repo update argo
 
@@ -192,16 +202,6 @@ jobs:
 
           echo "Applying Argo CD Applications for Frontend and Backend..."
           kubectl apply -f k8s/eks/argocd/apps/
-
-          echo "Giving ArgoCD Image Updater permissions..."
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export GITHUB_TOKEN=$(echo $SECRET_JSON | jq -r .GITHUB_TOKEN)
-
-          if [ -z "$GITHUB_TOKEN" ]; then
-            echo "ERROR: Github token missing from Secrets Manager"
-            exit 1
-          fi
-          envsubst '$GITHUB_TOKEN' < k8s/eks/secrets/argocd-secrets.yml | kubectl apply -f -
 
           echo "Applying Argo CD Image Updater..."
           kubectl apply -f k8s/eks/argocd/img-updaters.yml
