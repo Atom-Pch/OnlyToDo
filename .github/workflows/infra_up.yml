@@ -163,7 +163,7 @@ jobs:
             echo "Webhook not ready, retrying in 5 seconds..."
             sleep 5
           done
-          
+
           for i in {1..5}; do
             if helm upgrade -i argocd-image-updater argo/argocd-image-updater \
               --namespace argocd \
@@ -191,6 +191,16 @@ jobs:
 
           echo "Applying Argo CD Applications for Frontend and Backend..."
           kubectl apply -f k8s/eks/argocd/apps/
+
+          echo "Giving ArgoCD Image Updater permissions..."
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export GITHUB_TOKEN=$(echo $SECRET_JSON | jq -r .GITHUB_TOKEN)
+
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "ERROR: Github token missing from Secrets Manager"
+            exit 1
+          fi
+          envsubst '$GITHUB_TOKEN' < k8s/eks/secrets/argocd-secrets.yml | kubectl apply -f -
 
       - name: Install kube-prometheus-stack
         run: |

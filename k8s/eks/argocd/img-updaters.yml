@@ -1,0 +1,53 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: todo-backend-updater
+  namespace: argocd
+spec:
+  writeBackConfig:
+    method: "git"
+    gitConfig:
+      repository: "https://github.com/Atom-Pch/OnlyToDo.git"
+      branch: "main"
+      writeBackTarget: "helmvalues:./gitops/charts/backend/values.yml"
+      credentials:
+        secret:
+          name: todo-secrets-argocd
+          key: github-token
+  applicationRefs:
+    - namePattern: "todo-backend"
+  images:
+    - alias: "backend"
+      imageName: "131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-backend-repo"
+      helmImageSpec:
+        imageName: image.repository
+        imageTag: image.tag
+      commonUpdateSettings:
+        updateStrategy: "newest-build"
+---
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: todo-frontend-updater
+  namespace: argocd
+spec:
+  writeBackConfig:
+    method: "git"
+    gitConfig:
+      repository: "https://github.com/Atom-Pch/OnlyToDo.git"
+      branch: "main"
+      writeBackTarget: "helmvalues:./gitops/charts/frontend/values.yml"
+      credentials:
+        secret:
+          name: todo-secrets-argocd
+          key: github-token
+  applicationRefs:
+    - namePattern: "todo-frontend"
+  images:
+    - alias: "frontend"
+      imageName: "131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-frontend-repo"
+      helmImageSpec:
+        imageName: image.repository
+        imageTag: image.tag
+      commonUpdateSettings:
+        updateStrategy: "newest-build"
