@@ -174,6 +174,9 @@ jobs:
             echo "Webhook not ready, retrying in 5 seconds..."
             sleep 5
           done
+          
+          echo "Applying ecr login config map..."
+          kubectl apply -f k8s/eks/argocd/ecr-script-cfm.yml
 
           for i in {1..5}; do
             if helm upgrade -i argocd-image-updater argo/argocd-image-updater \
@@ -185,8 +188,13 @@ jobs:
               --set config.registries[0].name=ECR \
               --set config.registries[0].prefix="131912109503.dkr.ecr.us-east-2.amazonaws.com" \
               --set config.registries[0].api_url="https://131912109503.dkr.ecr.us-east-2.amazonaws.com" \
-              --set config.registries[0].credentials="ext:/usr/local/bin/aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 131912109503.dkr.ecr.us-east-2.amazonaws.com" \
-              --set config.registries[0].credsexpire=9h; then
+              --set config.registries[0].credentials="ext:/app/scripts/ecr-login.sh" \
+              --set config.registries[0].credsexpire=10h \
+              --set "extraVolumes[0].name=ecr-login" \
+              --set "extraVolumes[0].configMap.name=ecr-login-script" \
+              --set "extraVolumes[0].configMap.defaultMode=0755" \
+              --set "extraVolumeMounts[0].name=ecr-login" \
+              --set "extraVolumeMounts[0].mountPath=/app/scripts"; then
                 echo "Helm argo/argocd-image-updater install successful!"
                 break
               fi
