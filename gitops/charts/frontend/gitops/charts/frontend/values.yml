@@ -3,3 +3,5 @@
 image:
   tag: 321569a
   repository: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-frontend-repo
+values:
+  yml: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-frontend-repo:321569a
