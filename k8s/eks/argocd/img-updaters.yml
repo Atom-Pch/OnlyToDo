@@ -9,7 +9,7 @@ spec:
     gitConfig:
       repository: "https://github.com/Atom-Pch/OnlyToDo.git"
       branch: "main"
-      # writeBackTarget: "helmvalues:gitops/charts/backend/values.yml"
+      writeBackTarget: "helmvalues:values.yml"
   applicationRefs:
     - namePattern: "todo-backend"
       images:
@@ -19,7 +19,7 @@ spec:
             helm:
               name: image.repository
               tag: image.tag
-              spec: values.yml
+              # spec: values.yml
   commonUpdateSettings:
     updateStrategy: "newest-build"
     pullSecret: pullsecret:argocd/aws-ecr-creds
@@ -35,7 +35,7 @@ spec:
     gitConfig:
       repository: "https://github.com/Atom-Pch/OnlyToDo.git"
       branch: "main"
-      # writeBackTarget: "helmvalues:gitops/charts/frontend/values.yml"
+      writeBackTarget: "helmvalues:values.yml"
   applicationRefs:
     - namePattern: "todo-frontend"
       images:
@@ -45,7 +45,7 @@ spec:
             helm:
               name: image.repository
               tag: image.tag
-              spec: values.yml
+              # spec: values.yml
   commonUpdateSettings:
     updateStrategy: "newest-build"
     pullSecret: pullsecret:argocd/aws-ecr-creds
