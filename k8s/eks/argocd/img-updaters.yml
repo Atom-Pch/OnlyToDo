@@ -19,7 +19,7 @@ spec:
             helm:
               name: image.repository
               tag: image.tag
-              spec: values.yml
+              # spec: values.yml
   commonUpdateSettings:
     updateStrategy: "newest-build"
     pullSecret: pullsecret:argocd/aws-ecr-creds
@@ -45,7 +45,7 @@ spec:
             helm:
               name: image.repository
               tag: image.tag
-              spec: values.yml
+              # spec: values.yml
   commonUpdateSettings:
     updateStrategy: "newest-build"
     pullSecret: pullsecret:argocd/aws-ecr-creds
