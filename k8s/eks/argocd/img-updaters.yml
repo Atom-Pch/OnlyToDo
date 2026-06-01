@@ -20,7 +20,7 @@ spec:
               name: image.repository
               tag: image.tag
           commonUpdateSettings:
-            pullSecret: argocd/todo-secrets-argocd#github-token
+            pullSecret: "ext:/app/scripts/ecr-login.sh"
   commonUpdateSettings:
     updateStrategy: "newest-build"
 ---
@@ -46,6 +46,6 @@ spec:
               name: image.repository
               tag: image.tag
           commonUpdateSettings:
-            pullSecret: argocd/todo-secrets-argocd#github-token
+            pullSecret: "ext:/app/scripts/ecr-login.sh"
   commonUpdateSettings:
     updateStrategy: "newest-build"
