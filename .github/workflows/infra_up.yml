@@ -307,7 +307,7 @@ jobs:
           ALB_DNS=""
           while [ -z "$ALB_DNS" ]; do
             echo "Waiting for ALB DNS..."
-            sleep 10
+            sleep 30
             ALB_DNS=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           done
 
