@@ -78,9 +78,12 @@ alertmanager:
             - severity = critical
           receiver: discord
           group_wait: 0s
-        # Silence Watchdog (it's just a heartbeat alert)
+        # Silence Watchdog (it's just a heartbeat alert) and info-level alerts (often noisy)
         - matchers:
             - alertname = Watchdog
+          receiver: "null"
+        - matchers:
+            - severity = info
           receiver: "null"
 
     receivers:
