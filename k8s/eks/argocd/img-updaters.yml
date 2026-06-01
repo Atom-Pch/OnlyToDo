@@ -19,8 +19,6 @@ spec:
             helm:
               name: image.repository
               tag: image.tag
-          commonUpdateSettings:
-            pullSecret: argocd/todo-secrets-argocd#github-token
   commonUpdateSettings:
     updateStrategy: "newest-build"
 ---
@@ -45,7 +43,5 @@ spec:
             helm:
               name: image.repository
               tag: image.tag
-          commonUpdateSettings:
-            pullSecret: argocd/todo-secrets-argocd#github-token
   commonUpdateSettings:
     updateStrategy: "newest-build"

@@ -37,3 +37,7 @@ configs:
       url: https://github.com/Atom-Pch/OnlyToDo
       name: todo-app
       type: git
+      username: github
+      passwordSecret:
+        name: todo-secrets-argocd
+        key: github-token
