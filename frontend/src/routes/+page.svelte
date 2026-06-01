@@ -3,7 +3,7 @@
 		Welcome to the <span
 			class="bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent"
 			>To-Do</span
-		> App! again
+		> App! test
 	</h1>
 
 	<p class="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-gray-400 sm:text-xl">
