@@ -30,16 +30,3 @@ repoServer:
 configs:
   params:
     server.insecure: true # redundant safety net alongside --insecure
-
-  # Tell Argo CD your GitHub repo needs no credentials (public) or add a secret here
-  repositories:
-    todo-app:
-      url: https://github.com/Atom-Pch/OnlyToDo
-      name: todo-app
-      type: git
-      usernameSecret:
-        name: todo-secrets-argocd
-        key: username
-      passwordSecret:
-        name: todo-secrets-argocd
-        key: github-token
