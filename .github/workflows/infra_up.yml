@@ -202,6 +202,9 @@ jobs:
           fi
           envsubst '$GITHUB_TOKEN' < k8s/eks/secrets/argocd-secrets.yml | kubectl apply -f -
 
+          echo "Applying Argo CD Image Updater..."
+          kubectl apply -f k8s/eks/argocd/img-updaters.yml
+
       - name: Install kube-prometheus-stack
         run: |
           echo "Creating monitoring namespace..."
