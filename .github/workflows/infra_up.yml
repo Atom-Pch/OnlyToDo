@@ -174,7 +174,7 @@ jobs:
             echo "Webhook not ready, retrying in 5 seconds..."
             sleep 5
           done
-          
+
           echo "Applying ecr login config map..."
           kubectl apply -f k8s/eks/argocd/ecr-script-cfm.yml
 
