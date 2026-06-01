@@ -21,7 +21,7 @@ spec:
               tag: image.tag
   commonUpdateSettings:
     updateStrategy: "newest-build"
-    pullSecret: "ext:/app/scripts/ecr-login.sh"
+    pullSecret: pullsecret:argocd/aws-ecr-creds
 ---
 apiVersion: argocd-image-updater.argoproj.io/v1alpha1
 kind: ImageUpdater
@@ -46,4 +46,4 @@ spec:
               tag: image.tag
   commonUpdateSettings:
     updateStrategy: "newest-build"
-    pullSecret: "ext:/app/scripts/ecr-login.sh"
+    pullSecret: pullsecret:argocd/aws-ecr-creds
