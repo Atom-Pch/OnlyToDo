@@ -1,0 +1,5 @@
+helm:
+  parameters:
+  - name: values.yml
+    value: 131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-backend-repo:7b37930
+    forcestring: true
