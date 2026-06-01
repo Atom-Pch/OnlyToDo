@@ -175,8 +175,12 @@ jobs:
             sleep 5
           done
 
-          echo "Applying ecr login config map..."
-          kubectl apply -f k8s/eks/argocd/ecr-script-cfm.yml
+          echo "Creating ecr login config map..."
+          kubectl create configmap ecr-login-script \
+            --from-literal=ecr-login.sh='#!/bin/sh
+          echo "AWS:$(aws ecr get-login-password --region us-east-2)"' \
+            -n argocd \
+            --dry-run=client -o yaml | kubectl apply -f -
 
           for i in {1..5}; do
             if helm upgrade -i argocd-image-updater argo/argocd-image-updater \
