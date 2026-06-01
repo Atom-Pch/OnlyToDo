@@ -9,7 +9,7 @@ spec:
     gitConfig:
       repository: "https://github.com/Atom-Pch/OnlyToDo.git"
       branch: "main"
-      writeBackTarget: "helmvalues:./gitops/charts/backend/values.yml"
+      # writeBackTarget: "helmvalues:gitops/charts/backend/values.yml"
   applicationRefs:
     - namePattern: "todo-backend"
       images:
@@ -35,7 +35,7 @@ spec:
     gitConfig:
       repository: "https://github.com/Atom-Pch/OnlyToDo.git"
       branch: "main"
-      writeBackTarget: "helmvalues:./gitops/charts/frontend/values.yml"
+      # writeBackTarget: "helmvalues:gitops/charts/frontend/values.yml"
   applicationRefs:
     - namePattern: "todo-frontend"
       images:
