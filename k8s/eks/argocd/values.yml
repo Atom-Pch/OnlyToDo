@@ -19,7 +19,7 @@ server:
       alb.ingress.kubernetes.io/group.name: todo-shared-alb # shares your existing ALB
       alb.ingress.kubernetes.io/group.order: "20"
     hostname: argocd.onlytodo.xyz
-    path: /*
+    path: /
 
 controller:
   replicas: 1
