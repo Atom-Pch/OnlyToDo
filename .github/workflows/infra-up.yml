@@ -22,25 +22,22 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: "1.14.8"
 
-      - name: Terraform Init & Apply
+      - name: Terraform Init and Apply
         working-directory: infra/terraform/
         run: |
           terraform init
           terraform apply -auto-approve
 
   upload_frontend:
-    name: Build & Push Frontend Images
+    name: Build and Push Frontend Images
     needs: provision_infra
     uses: ./.github/workflows/build-image.yml
     with:
@@ -48,7 +45,7 @@ jobs:
       context: ./frontend
 
   upload_backend:
-    name: Build & Push Backend Images
+    name: Build and Push Backend Images
     needs: provision_infra
     uses: ./.github/workflows/build-image.yml
     with:
