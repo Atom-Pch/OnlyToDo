@@ -98,7 +98,7 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install Dependencies
+      - name: Install Dependencies And update Kubeconfig
         run: |
           DEBIAN_FRONTEND=noninteractive
           curl -sL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
@@ -108,11 +108,13 @@ jobs:
           chmod 700 get_helm.sh
           ./get_helm.sh
 
-      - name: Add EKS Helm Repository
+      - name: Update kubeconfig for EKS Cluster
         run: |
           echo "Updating kubeconfig for EKS cluster..."
           aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster
 
+      - name: Install AWS Load Balancer Controller
+        run: |
           echo "Fetching VPC ID for EKS Cluster..."
           VPC_ID=$(aws ec2 describe-vpcs \
             --filters "Name=tag:Name,Values=todo-vpc" \
@@ -132,11 +134,18 @@ jobs:
             --set vpcId=$VPC_ID \
             --set image.repository=602401143452.dkr.ecr.us-east-2.amazonaws.com/amazon/aws-load-balancer-controller
 
+      - name: Create Namespaces
+        run: |
+          echo "Creating Argo CD namespace..."
+          kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+
+          echo "Creating monitoring namespace..."
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Wait for Load Balancer Controller to become Ready
         run: |
           echo "Waiting for the aws-load-balancer-controller deployment to roll out..."
           kubectl rollout status deployment aws-load-balancer-controller -n kube-system --timeout=1m
-          echo "Controller is ready! Proceeding to application deployment."
 
       - name: Inject ECR Credentials to Argo CD
         run: |
@@ -151,11 +160,8 @@ jobs:
             --namespace=argocd \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Install Argo CD, Image Updater, and Applications
+      - name: Install Argo CD
         run: |
-          echo "Creating Argo CD namespace..."
-          kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-
           echo "Getting ArgoCD Github permissions..."
           SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export GITHUB_TOKEN=$(echo $SECRET_JSON | jq -r .GITHUB_TOKEN)
@@ -188,6 +194,11 @@ jobs:
             sleep 5
           done
 
+          echo "Applying Argo CD Applications For Frontend and Backend..."
+          kubectl apply -f k8s/eks/argocd/apps/
+
+      - name: Install Argo CD Image Updater
+        run: |
           for i in {1..5}; do
             if helm upgrade -i argocd-image-updater argo/argocd-image-updater \
               --namespace argocd \
@@ -205,37 +216,11 @@ jobs:
             sleep 5
           done
 
-          echo "Applying Argo CD Applications for Frontend and Backend..."
-          kubectl apply -f k8s/eks/argocd/apps/
-
           echo "Applying Argo CD Image Updater..."
           kubectl apply -f k8s/eks/argocd/img-updaters.yml
 
       - name: Install kube-prometheus-stack
         run: |
-          echo "Creating monitoring namespace..."
-          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
-
-          echo "Injecting Grafana Admin Username and Password from Secrets Manager..."
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export GRAFANA_USER=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_USER)
-          export GRAFANA_PASS=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
-
-          if [ -z "$GRAFANA_USER" ] || [ -z "$GRAFANA_PASS" ]; then
-            echo "ERROR: Grafana credentials missing from Secrets Manager"
-            exit 1
-          fi
-          envsubst '$GRAFANA_USER $GRAFANA_PASS' < k8s/eks/secrets/grafana-secrets.yml | kubectl apply -f -
-
-          echo "Integrating Discord alerts..."
-          export DISCORD_WEBHOOK=$(echo $SECRET_JSON | jq -r .DISCORD_WEBHOOK)
-
-          if [ -z "$DISCORD_WEBHOOK" ]; then
-            echo "ERROR: Discord webhook URL missing from Secrets Manager"
-            exit 1
-          fi
-          envsubst '$DISCORD_WEBHOOK' < k8s/eks/secrets/alert-secrets.yml | kubectl apply -f -
-
           echo "Installing kube-prometheus-stack Helm..."
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
@@ -264,7 +249,39 @@ jobs:
           echo "Applying Custom Prometheus Alerting Rules..."
           kubectl apply -f k8s/eks/monitoring/alerts.yml
 
-      - name: Deploy Kubernetes Application
+      - name: Deploy Monitoring Services
+        run: |
+          echo "Injecting Grafana Admin Username and Password from Secrets Manager..."
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export GRAFANA_USER=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_USER)
+          export GRAFANA_PASS=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
+
+          if [ -z "$GRAFANA_USER" ] || [ -z "$GRAFANA_PASS" ]; then
+            echo "ERROR: Grafana credentials missing from Secrets Manager"
+            exit 1
+          fi
+          envsubst '$GRAFANA_USER $GRAFANA_PASS' < k8s/eks/secrets/grafana-secrets.yml | kubectl apply -f -
+
+          echo "Integrating Discord alerts..."
+          export DISCORD_WEBHOOK=$(echo $SECRET_JSON | jq -r .DISCORD_WEBHOOK)
+
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "ERROR: Discord webhook URL missing from Secrets Manager"
+            exit 1
+          fi
+          envsubst '$DISCORD_WEBHOOK' < k8s/eks/secrets/alert-secrets.yml | kubectl apply -f -
+
+          echo "Applying grafana dashboard..."
+          kubectl apply -f k8s/eks/monitoring/graf-dash-cfm.yml
+      
+      - name: Creating Config Map for DB initialization
+        run: |
+          echo "Creating ConfigMap for DB Initialization Script..."
+          kubectl create configmap db-init-script \
+            --from-file=init.sql=database/init.sql \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply Application Secrets
         run: |
           echo "Fetching Dynamic Secrets for K8s..."
           DB_SECRET_ARN=$(aws ssm get-parameter --name "/todo/config/db_secret_arn" --region $AWS_REGION --query "Parameter.Value" --output text)
@@ -280,31 +297,8 @@ jobs:
             exit 1
           fi
 
-          echo "Creating ConfigMap for DB Initialization Script..."
-          kubectl create configmap db-init-script \
-            --from-file=init.sql=database/init.sql \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-          echo "Applying Manifests..."
+          echo "Applying App Secrets..."
           envsubst < k8s/eks/secrets/default-secrets.yml | kubectl apply -f -
-
-          for i in {1..5}; do
-            if kubectl apply -f k8s/eks/ingress.yml; then
-              echo "Ingress applied successfully!"
-              break
-            fi
-
-            if [ $i -eq 5 ]; then
-              echo "ERROR: Failed to apply Ingress after 5 attempts."
-              exit 1
-            fi
-
-            echo "Webhook not ready, retrying in 5 seconds..."
-            sleep 5
-          done
-
-          echo "Applying grafana dashboard..."
-          kubectl apply -f k8s/eks/monitoring/graf-dash-cfm.yml
 
       - name: Wait for Load Balancer DNS
         run: |
@@ -329,9 +323,7 @@ jobs:
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
-          echo "EKS ALB DNS Updated Successfully: $ALB_DNS."
 
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/CNAME/*" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
-          echo "EKS ALB DNS Updated Successfully: $ALB_DNS."
