@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+data:
+  DB_HOST: "todo-db.c962yekmm5ja.us-east-2.rds.amazonaws.com"
+  DB_PORT: "5432"
+  DB_USER: "atom"
+  DB_NAME: "todo_db"
+  S3_BUCKET_NAME: "todo-files-131912109503-us-east-2-an"
+  AWS_REGION: "us-east-2"
