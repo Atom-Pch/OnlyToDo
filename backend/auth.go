@@ -29,7 +29,7 @@ func (app *App) registerUser(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), 14)
 	if err != nil {
-		http.Error(w, "Server error | "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (app *App) registerUser(w http.ResponseWriter, r *http.Request) {
 	timer.ObserveDuration()
 
 	if err != nil {
-		http.Error(w, "Failed to create user | "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		authFailuresTotal.WithLabelValues("registration_failed").Inc()
 		return
 	}
@@ -60,13 +60,13 @@ func (app *App) loginUser(w http.ResponseWriter, r *http.Request) {
 	timer.ObserveDuration()
 
 	if err != nil {
-		http.Error(w, "Invalid user | "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, "Failed to get user", http.StatusUnauthorized)
 		authFailuresTotal.WithLabelValues("invalid_user").Inc()
 		return
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(creds.Password)); err != nil {
-		http.Error(w, "Invalid credentials | "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		authFailuresTotal.WithLabelValues("invalid_credentials").Inc()
 		return
 	}

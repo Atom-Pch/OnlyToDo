@@ -29,7 +29,7 @@ func (app *App) getTodos(w http.ResponseWriter, r *http.Request) {
 	timer.ObserveDuration()
 
 	if err != nil {
-		http.Error(w, "Failed to query database | "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to query database", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -39,7 +39,7 @@ func (app *App) getTodos(w http.ResponseWriter, r *http.Request) {
 		var t Todo
 		var desc, imageURL sql.NullString
 		if err := rows.Scan(&t.ID, &t.Title, &desc, &imageURL, &t.IsCompleted); err != nil {
-			http.Error(w, "Failed to parse data | "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Failed to parse data", http.StatusInternalServerError)
 			return
 		}
 		if desc.Valid {
@@ -87,7 +87,7 @@ func (app *App) presignS3(w http.ResponseWriter, r *http.Request) {
 	}, s3.WithPresignExpires(time.Minute*5))
 
 	if err != nil {
-		http.Error(w, "Failed to sign put request | "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to sign put request", http.StatusInternalServerError)
 		return
 	}
 
@@ -103,7 +103,7 @@ func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
 
 	var t Todo
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
-		http.Error(w, "Invalid request payload | "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
@@ -115,7 +115,7 @@ func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
 	timer.ObserveDuration()
 
 	if err != nil {
-		http.Error(w, "Failed to create To-Do | "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to create To-Do", http.StatusInternalServerError)
 		return
 	}
 
@@ -151,14 +151,14 @@ func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	var imgUrl sql.NullString
 	err := app.DB.QueryRow("SELECT image_url FROM todos WHERE id = $1 AND user_id = $2", todoID, userID).Scan(&imgUrl)
 	if err != nil {
-		http.Error(w, "To-Do not found or unauthorized | "+err.Error(), http.StatusNotFound)
+		http.Error(w, "To-Do not found", http.StatusNotFound)
 		return
 	}
 
 	var todoTitle string
 	err = app.DB.QueryRow("SELECT title FROM todos WHERE id = $1", todoID).Scan(&todoTitle)
 	if err != nil {
-		todoTitle = "Unknown | " + err.Error()
+		todoTitle = "Unknown"
 	}
 
 	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("deleteTodo"))
@@ -166,7 +166,7 @@ func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	timer.ObserveDuration()
 
 	if err != nil {
-		http.Error(w, "Failed to delete To-Do | "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to delete To-Do", http.StatusInternalServerError)
 		return
 	}
 
@@ -186,7 +186,7 @@ func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
 		})
 
 		if s3Err != nil {
-			http.Error(w, "Warning: Failed to delete image from S3 | "+s3Err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Warning: Failed to delete image from S3", http.StatusInternalServerError)
 			return // Return early since we are sending an HTTP error
 		}
 	}

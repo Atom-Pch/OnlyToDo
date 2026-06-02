@@ -86,7 +86,7 @@ func (app *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session_token")
 		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "No session found", http.StatusUnauthorized)
 			return
 		}
 
@@ -98,7 +98,7 @@ func (app *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			http.Error(w, "Unauthorized | "+err.Error(), http.StatusUnauthorized)
+			http.Error(w, "Invalid session", http.StatusUnauthorized)
 			return
 		}
 
