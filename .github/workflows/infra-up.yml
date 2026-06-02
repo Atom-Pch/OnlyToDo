@@ -39,9 +39,6 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
-  # ----------------
-  # FIRST PARALLEL
-  # ----------------
   upload_frontend:
     name: "Build & Push Frontend Images"
     needs: provision_infra
@@ -104,9 +101,6 @@ jobs:
           kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
           kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
 
-  # -----------------
-  # SECOND PARALLEL
-  # -----------------
   setup_argocd:
     name: "Setup Argo CD and Argo CD Image Updater"
     needs: prepare_cluster
