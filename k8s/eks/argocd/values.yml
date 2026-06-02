@@ -30,3 +30,7 @@ repoServer:
 configs:
   params:
     server.insecure: true # redundant safety net alongside --insecure
+  cm:
+    users.anonymous.enabled: "true"
+  rbac:
+    policy.default: role:readonly
