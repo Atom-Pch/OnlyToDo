@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   provision_infra:
-    name: "Provision Infra with Terraform"
+    name: Provision Infra with Terraform
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -40,7 +40,7 @@ jobs:
           terraform apply -auto-approve
 
   upload_frontend:
-    name: "Build & Push Frontend Images"
+    name: Build & Push Frontend Images
     needs: provision_infra
     uses: ./.github/workflows/build-image.yml
     with:
@@ -48,7 +48,7 @@ jobs:
       context: ./frontend
 
   upload_backend:
-    name: "Build & Push Backend Images"
+    name: Build & Push Backend Images
     needs: provision_infra
     uses: ./.github/workflows/build-image.yml
     with:
@@ -56,7 +56,7 @@ jobs:
       context: ./backend
 
   prepare_cluster:
-    name: "Prepare Cluster with AWS LBC and Namespaces"
+    name: Prepare Cluster with AWS LBC and Namespaces
     needs: provision_infra
     runs-on: ubuntu-24.04
     steps:
@@ -102,7 +102,7 @@ jobs:
           kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
 
   setup_argocd:
-    name: "Setup Argo CD and Argo CD Image Updater"
+    name: Setup Argo CD and Argo CD Image Updater
     needs: prepare_cluster
     runs-on: ubuntu-24.04
     steps:
@@ -188,7 +188,7 @@ jobs:
           kubectl apply -f deploy/argocd/img-updaters.yml
 
   setup_monitoring:
-    name: "Setup Monitoring with Prometheus and Grafana"
+    name: Setup Monitoring with Prometheus and Grafana
     needs: prepare_cluster
     runs-on: ubuntu-24.04
     steps:
@@ -297,7 +297,7 @@ jobs:
           echo "ALB provisioned: $ALB_DNS"
 
   update_dns:
-    name: "Update Porkbun DNS Record"
+    name: Update Porkbun DNS Record
     needs: deploy_application
     runs-on: ubuntu-24.04
     steps:
