@@ -1,54 +1,102 @@
-# 📋 DevOps To-Do List Web App
+# 📋 DevOps To-Do List — Learning Project
 
-Welcome to my DevOps playground! This is a simple To-Do list web application built specifically to practice, develop, and refine my SDLC, Cloud, and Infrastructure engineering skills. 
-
-While the application itself is a straightforward To-Do tracker with authentication, the primary focus of this repository is the pipeline, infrastructure, and deployment architecture behind the scenes.
+A simple To-Do web application built as a hands-on playground for practising SDLC, cloud, and infrastructure engineering. The app itself (task tracking with authentication) is intentionally minimal — the real work is everything underneath: the pipeline, infrastructure, and deployment architecture.
 
 ---
 
-## 🌍 **Live Demo:** [onlytodo.xyz](http://onlytodo.xyz)
-**⏳ Demo notice:** To conserve AWS credits, the live environment is ephemeral. The infrastructure is automated to be available on a strict schedule and is <ins>*only accessible between 09:00 and 18:00 weekdays Bangkok time (UTC+7, not counting cold start and DNS propagation)*</ins>. Outside of these hours, **the entire infrastructure will be detroyed** before being created again the next day. If you want to check it out, please do so in the specified time.
+## 🌍 Live Demo: [onlytodo.xyz](http://onlytodo.xyz)
 
-## ⚠️ Project Status & Other important Notes
+> **⏳ Availability notice:** To conserve AWS credits, the environment runs on a strict schedule. The infrastructure is automatically provisioned each morning and fully destroyed each evening. It is only accessible **weekdays, 09:00–18:00 Bangkok time (UTC+7)**, not accounting for cold-start time and DNS propagation. Outside these hours, the environment does not exist.
 
-* **Work in Progress:** This is an active, ongoing project. You will likely see active refactoring, code cleaning, and bug fixing happening as I continue to build and learn.
-* **Budget Constraints:** This architecture is built utilizing the AWS Free Tier and promotional credits. Because of these strict cost limitations, certain critical production elements such as highly available multi-AZ deployments, advanced security layers, and comprehensive logging may be compromised or scaled back, despite known best practices.
-* **Known Anti-Patterns:** For the same cost-saving reasons mentioned above, you may spot some architectural anti-patterns that would normally be avoided in a production environment.
-* **Evolving Tech Stack:** The tools listed below represent the current state of the project. Tools may be removed, swapped, or added as the project evolves. **(Note: ArgoCD is next on the roadmap and will be added soon!)**
+---
+
+## ⚠️ Project Status & Important Notes
+
+- **Work in progress.** Expect active refactoring, cleanup, and occasional breakage as the project evolves.
+- **Budget-constrained.** This runs on the AWS Free Tier and promotional credits. As a result, certain production best practices — multi-AZ deployments, advanced security layers, comprehensive logging — are intentionally compromised or omitted.
+- **Known anti-patterns.** Architectural shortcuts exist for cost reasons. They are acknowledged, not accidental.
+- **Evolving stack.** Tools are swapped in and out as the project progresses. The sections below reflect the current state.
 
 ---
 
 ## 🛠️ Current Tech Stack
 
-### Web Development
-* **Frontend:** SvelteKit
-* **Backend:** Go
+### Application
+| Layer | Tool |
+|---|---|
+| Frontend | SvelteKit |
+| Backend | Go |
 
-### Database
-* **RDBMS:** PostgreSQL
+### Data
+| Layer | Tool |
+|---|---|
+| Relational Database | PostgreSQL on Amazon RDS |
+| File Storage | Amazon S3 |
 
 ### Containerization & Orchestration
-* **Containers:** Docker
-* **Orchestration:** Kubernetes
+| Layer | Tool |
+|---|---|
+| Containers | Docker |
+| Registry | Amazon ECR |
+| Orchestration | Kubernetes |
+| Package Management | Helm |
+| Ingress Controller | AWS Load Balancer Controller |
 
-### Infrastructure & Configuration
-* **Cloud Provider:** AWS
-* **Infrastructure as Code (IaC):** Terraform
+### Infrastructure
+| Layer | Tool |
+|---|---|
+| Cloud Provider | AWS |
+| Infrastructure as Code | Terraform |
+| Remote State | S3 + Native Terraform Locking |
 
-### CI/CD & Testing
-* **Pipeline:** GitHub Actions
-* **GitOps CD** Argo CD *(Coming soon!)*
-* **Testing:** Playwright
+### CI/CD & GitOps
+| Layer | Tool |
+|---|---|
+| CI Pipeline | GitHub Actions |
+| Cron Scheduler | GitLab CI/CD *(triggers GitHub Actions for daily infra up/down)* |
+| GitOps CD | Argo CD |
+| Automated Image Updates | Argo CD Image Updater |
+| E2E Testing | Playwright |
 
 ### Monitoring & Observability
-* **Metrics:** Prometheus
-* **Dashboards:** Grafana
+| Layer | Tool |
+|---|---|
+| Metrics & Alerting | Prometheus + Alertmanager |
+| Dashboards | Grafana |
+| Alert Delivery | Discord (via webhook) |
 
-## Former tools used
-### Infrastructure & Configuration
-* **Configuration Management:** Ansible
-  * **Reason**: Moved to container-based deployments
+---
 
-### CI/CD & Testing
-* **Pipeline:** GitLab CI/CD
-  * **Reason**: Limited compute time for free tier
+## 🔄 Pipeline Overview
+
+```
+Code Push
+  └─► GitHub Actions CI
+        ├─► Playwright E2E Tests
+        └─► Build & Push Docker Images → Amazon ECR
+                                              │
+                                        Argo CD Image Updater detects new tag
+                                              │
+                                        Argo CD syncs Helm release → EKS
+```
+
+**Infrastructure lifecycle** (weekdays only):
+```
+GitLab Cron (morning)  →  Triggers GitHub Actions: infra-up
+  └─► Terraform Apply (VPC, EKS, RDS, ECR, S3)
+  └─► Install AWS LBC, Argo CD, Argo CD Image Updater
+  └─► Install kube-prometheus-stack
+
+GitLab Cron (evening)  →  Triggers GitHub Actions: infra-down
+  └─► ALB cleanup → Terraform Destroy
+  └─► Domain parked via Porkbun API
+```
+
+---
+
+## 🗄️ Former Tools
+
+| Tool | Reason Removed |
+|---|---|
+| Ansible | Replaced by container-based deployments |
+| GitLab CI/CD *(as primary pipeline)* | Free-tier compute limits; migrated to GitHub Actions. GitLab remains in use solely as a cron scheduler. |
