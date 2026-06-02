@@ -95,7 +95,7 @@ func main() {
 	mux.HandleFunc("POST /api/register", app.registerUser)
 	mux.HandleFunc("POST /api/login", app.loginUser)
 	mux.HandleFunc("POST /api/logout", app.logoutUser)
-	mux.HandleFunc("GET /api/me", app.getCurrentUser)
+	mux.HandleFunc("GET /api/who", app.getCurrentUser)
 
 	// To-Do Routes (Protected by Auth Middleware)
 	mux.HandleFunc("GET /api/todos", app.requireAuth(app.getTodos))

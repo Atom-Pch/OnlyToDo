@@ -30,7 +30,7 @@
 	// --- CHECK WHO IS LOGGED IN ---
 	async function checkSession() {
 		try {
-			const res = await fetch(`/api/me`, { credentials: 'include' });
+			const res = await fetch(`/api/who`, { credentials: 'include' });
 			if (res.ok) {
 				const data = await res.json();
 				currentUser = data.username;
