@@ -20,70 +20,35 @@ permissions:
   contents: read
 
 jobs:
-  run_playwright_tests:
-    runs-on: ubuntu-22.04
+  test:
+    runs-on: ubuntu-24.04
     container:
-      image: mcr.microsoft.com/playwright:v1.59.0-jammy
+      image: mcr.microsoft.com/playwright:v1.50.0-noble # noble = ubuntu 24.04 base
     steps:
       - uses: actions/checkout@v6
-      - name: Install dependencies and run tests
+      - name: Run E2E tests
         working-directory: frontend/tests/
         run: |
           npm ci
           npx playwright install --with-deps
           npm run test:e2e
-      - name: Upload Test Results
+      - uses: actions/upload-artifact@v7
         if: always()
-        uses: actions/upload-artifact@v7
         with:
-          name: report
+          name: playwright-report
           path: frontend/test-results-cicd
           retention-days: 1
 
-  build_and_push_frontend_images:
-    needs: [run_playwright_tests]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v6
+  build_frontend:
+    needs: test
+    uses: ./.github/workflows/build-image.yml
+    with:
+      repo_name: todo-frontend-repo
+      context: ./frontend
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and Push Images
-        run: |
-          docker build --provenance=false -t $FRONTEND_REPO ./frontend/
-          docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
-          docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${GITHUB_SHA::7}
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${GITHUB_SHA::7}
-
-  build_and_push_backend_images:
-    needs: [run_playwright_tests]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and Push Images
-        run: |
-          docker build --provenance=false -t $BACKEND_REPO ./backend/
-          docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
-          docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${GITHUB_SHA::7}
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${GITHUB_SHA::7}
+  build_backend:
+    needs: test
+    uses: ./.github/workflows/build-image.yml
+    with:
+      repo_name: todo-backend-repo
+      context: ./backend

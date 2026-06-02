@@ -8,17 +8,18 @@ env:
   APP_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
   AWS_ACCOUNT_ID: "131912109503"
   AWS_REGION: "us-east-2"
-  CORE_TABLE_NAME: "users"
   FRONTEND_REPO: "todo-frontend-repo"
   BACKEND_REPO: "todo-backend-repo"
+  EKS_CLUSTER: "todo-cluster"
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  initialize_infrastructure:
-    runs-on: ubuntu-22.04
+  provision_infra:
+    name: "Provision Infra with Terraform"
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
       - name: Configure AWS Credentials
@@ -38,121 +39,98 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
-  build_and_push_frontend_images:
-    needs: [initialize_infrastructure]
-    runs-on: ubuntu-22.04
+  # ----------------
+  # FIRST PARALLEL
+  # ----------------
+  upload_frontend:
+    name: "Build & Push Frontend Images"
+    needs: provision_infra
+    uses: ./.github/workflows/build-image.yml
+    with:
+      repo_name: todo-frontend-repo
+      context: ./frontend
+
+  upload_backend:
+    name: "Build & Push Backend Images"
+    needs: provision_infra
+    uses: ./.github/workflows/build-image.yml
+    with:
+      repo_name: todo-backend-repo
+      context: ./backend
+
+  prepare_cluster:
+    name: "Prepare Cluster with AWS LBC and Namespaces"
+    needs: provision_infra
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and Push Images
+      - name: Install Helm
         run: |
-          docker build --provenance=false -t $FRONTEND_REPO ./frontend/
-          docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
-          docker tag $FRONTEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${GITHUB_SHA::7}
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:${GITHUB_SHA::7}
-
-  build_and_push_backend_images:
-    needs: [initialize_infrastructure]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and Push Images
-        run: |
-          docker build --provenance=false -t $BACKEND_REPO ./backend/
-          docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
-          docker tag $BACKEND_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${GITHUB_SHA::7}
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:${GITHUB_SHA::7}
-
-  deploy_application:
-    needs: [build_and_push_frontend_images, build_and_push_backend_images]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Install Dependencies And update Kubeconfig
-        run: |
-          DEBIAN_FRONTEND=noninteractive
-          curl -sL "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
-          sudo dpkg -i session-manager-plugin.deb
-
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
           chmod 700 get_helm.sh
           ./get_helm.sh
 
-      - name: Update kubeconfig for EKS Cluster
-        run: |
-          echo "Updating kubeconfig for EKS cluster..."
-          aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
       - name: Install AWS Load Balancer Controller
         run: |
-          echo "Fetching VPC ID for EKS Cluster..."
           VPC_ID=$(aws ec2 describe-vpcs \
             --filters "Name=tag:Name,Values=todo-vpc" \
             --query 'Vpcs[0].VpcId' \
             --output text)
 
-          echo "Adding EKS Helm Repository and Install AWS Load Balancer Controller..."
           helm repo add eks https://aws.github.io/eks-charts
           helm repo update
           helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller \
             --version 3.2.2 \
             -n kube-system \
-            --set clusterName=todo-cluster \
+            --set clusterName=$EKS_CLUSTER \
             --set serviceAccount.create=true \
             --set serviceAccount.name=aws-load-balancer-controller \
             --set region=$AWS_REGION \
             --set vpcId=$VPC_ID \
             --set image.repository=602401143452.dkr.ecr.us-east-2.amazonaws.com/amazon/aws-load-balancer-controller
 
+          kubectl rollout status deployment aws-load-balancer-controller -n kube-system --timeout=2m
+
       - name: Create Namespaces
         run: |
-          echo "Creating Argo CD namespace..."
           kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-
-          echo "Creating monitoring namespace..."
           kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Wait for Load Balancer Controller to become Ready
+  # -----------------
+  # SECOND PARALLEL
+  # -----------------
+  setup_argocd:
+    name: "Setup Argo CD and Argo CD Image Updater"
+    needs: prepare_cluster
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install Helm
         run: |
-          echo "Waiting for the aws-load-balancer-controller deployment to roll out..."
-          kubectl rollout status deployment aws-load-balancer-controller -n kube-system --timeout=1m
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+          chmod 700 get_helm.sh
+          ./get_helm.sh
+
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
       - name: Inject ECR Credentials to Argo CD
         run: |
-          # Fetch the 12-hour token
           ECR_TOKEN=$(aws ecr get-login-password --region us-east-2)
 
-          # Create the secret directly in the cluster
           kubectl create secret docker-registry aws-ecr-creds \
             --docker-server=131912109503.dkr.ecr.us-east-2.amazonaws.com \
             --docker-username=AWS \
@@ -160,11 +138,10 @@ jobs:
             --namespace=argocd \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Install Argo CD
+      - name: Apply ArgoCD Secrets
         run: |
-          echo "Getting ArgoCD Github permissions..."
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export GITHUB_TOKEN=$(echo $SECRET_JSON | jq -r .GITHUB_TOKEN)
+          APP_SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export GITHUB_TOKEN=$(echo $APP_SECRET_JSON | jq -r .GITHUB_TOKEN)
 
           if [ -z "$GITHUB_TOKEN" ]; then
             echo "ERROR: Github token missing from Secrets Manager"
@@ -172,154 +149,181 @@ jobs:
           fi
           envsubst '$GITHUB_TOKEN' < deploy/secret-templates/argocd.yml | kubectl apply -f -
 
+      - name: Install Argo CD
+        run: |
           helm repo add argo https://argoproj.github.io/argo-helm
           helm repo update argo
 
-          echo "Installing Argo CD Helm Chart..."
-          for i in {1..5}; do
+          for i in {1..3}; do
             if helm upgrade -i argocd argo/argo-cd \
               --namespace argocd \
               --version 9.5.15 \
               -f deploy/argocd/values.yml; then
-              echo "Helm argo/argo-cd install successful!"
               break
             fi
 
-            if [ $i -eq 5 ]; then
-              echo "ERROR: Helm argo/argo-cd install failed after 5 attempts."
+            if [ $i -eq 3 ]; then
+              echo "ERROR: Helm argo/argo-cd upgrade/install failed after 3 attempts."
               exit 1
             fi
 
-            echo "Webhook not ready, retrying in 5 seconds..."
-            sleep 5
+            echo "Helm failed to upgrade/install, retrying in 10 seconds..."
+            sleep 10
           done
 
-          echo "Applying Argo CD Applications For Frontend and Backend..."
           kubectl apply -f deploy/argocd/apps/
 
       - name: Install Argo CD Image Updater
         run: |
-          for i in {1..5}; do
+          for i in {1..3}; do
             if helm upgrade -i argocd-image-updater argo/argocd-image-updater \
               --namespace argocd \
               --version 1.2.1; then
-                echo "Helm argo/argocd-image-updater install successful!"
                 break
               fi
 
-            if [ $i -eq 5 ]; then
-              echo "ERROR: Helm argo/argocd-image-updater install failed after 5 attempts."
+            if [ $i -eq 3 ]; then
+              echo "ERROR: Helm argo/argocd-image-updater upgrade/install failed after 3 attempts."
               exit 1
             fi
 
-            echo "Webhook not ready, retrying in 5 seconds..."
-            sleep 5
+            echo "Helm failed to upgrade/install, retrying in 10 seconds..."
+            sleep 10
           done
 
-          echo "Applying Argo CD Image Updater..."
           kubectl apply -f deploy/argocd/img-updaters.yml
+
+  setup_monitoring:
+    name: "Setup Monitoring with Prometheus and Grafana"
+    needs: prepare_cluster
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install Helm
+        run: |
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+          chmod 700 get_helm.sh
+          ./get_helm.sh
+
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+
+      - name: Apply Monitoring Secrets
+        run: |
+          APP_SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export GRAFANA_USER=$(echo $APP_SECRET_JSON | jq -r .GF_SECURITY_ADMIN_USER)
+          export GRAFANA_PASS=$(echo $APP_SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
+          export DISCORD_WEBHOOK=$(echo $APP_SECRET_JSON | jq -r .DISCORD_WEBHOOK)
+
+          if [ -z "$GRAFANA_USER" ] || [ -z "$GRAFANA_PASS" ] || [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "ERROR: Secrets missing from Secrets Manager"
+            exit 1
+          fi
+
+          envsubst '$GRAFANA_USER $GRAFANA_PASS' < deploy/secret-templates/grafana.yml | kubectl apply -f -
+          envsubst '$DISCORD_WEBHOOK' < deploy/secret-templates/alertmanager.yml | kubectl apply -f -
 
       - name: Install kube-prometheus-stack
         run: |
-          echo "Installing kube-prometheus-stack Helm..."
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
 
-          for i in {1..5}; do
+          for i in {1..3}; do
             if helm upgrade -i kube-prom prometheus-community/kube-prometheus-stack \
               --namespace monitoring \
               --version "85.2.0" \
               -f deploy/monitoring/values.yml; then
-              echo "Helm prometheus-community/kube-prometheus-stack install successful!"
               break
             fi
 
-            if [ $i -eq 5 ]; then
-              echo "ERROR: Helm prometheus-community/kube-prometheus-stack install failed after 5 attempts."
+            if [ $i -eq 3 ]; then
+              echo "ERROR: Helm prometheus-community/kube-prometheus-stack upgrade/install failed after 3 attempts."
               exit 1
             fi
 
-            echo "Webhook not ready, retrying in 5 seconds..."
-            sleep 5
+            echo "Helm failed to upgrade/install, retrying in 10 seconds..."
+            sleep 10
           done
 
-          echo "Applying backend service monitoring..."
           kubectl apply -f deploy/monitoring/backend-svcmon.yml
-
-          echo "Applying Custom Prometheus Alerting Rules..."
           kubectl apply -f deploy/monitoring/alert-rules.yml
+          kubectl apply -f deploy/monitoring/graf-dash-confmap.yml
 
-      - name: Deploy Monitoring Services
+  deploy_application:
+    needs: [upload_frontend, upload_backend, setup_argocd, setup_monitoring]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install Helm
         run: |
-          echo "Injecting Grafana Admin Username and Password from Secrets Manager..."
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export GRAFANA_USER=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_USER)
-          export GRAFANA_PASS=$(echo $SECRET_JSON | jq -r .GF_SECURITY_ADMIN_PASSWORD)
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+          chmod 700 get_helm.sh
+          ./get_helm.sh
 
-          if [ -z "$GRAFANA_USER" ] || [ -z "$GRAFANA_PASS" ]; then
-            echo "ERROR: Grafana credentials missing from Secrets Manager"
-            exit 1
-          fi
-          envsubst '$GRAFANA_USER $GRAFANA_PASS' < deploy/secret-templates/grafana.yml | kubectl apply -f -
-
-          echo "Integrating Discord alerts..."
-          export DISCORD_WEBHOOK=$(echo $SECRET_JSON | jq -r .DISCORD_WEBHOOK)
-
-          if [ -z "$DISCORD_WEBHOOK" ]; then
-            echo "ERROR: Discord webhook URL missing from Secrets Manager"
-            exit 1
-          fi
-          envsubst '$DISCORD_WEBHOOK' < deploy/secret-templates/alertmanager.yml | kubectl apply -f -
-
-          echo "Applying grafana dashboard..."
-          kubectl apply -f deploy/monitoring/graf-dash-cfm.yml
-      
-      - name: Creating Config Map for DB initialization
-        run: |
-          echo "Creating ConfigMap for DB Initialization Script..."
-          kubectl create configmap db-init-script \
-            --from-file=init.sql=database/init.sql \
-            --dry-run=client -o yaml | kubectl apply -f -
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
       - name: Apply Application Secrets
         run: |
-          echo "Fetching Dynamic Secrets for K8s..."
           DB_SECRET_ARN=$(aws ssm get-parameter --name "/todo/config/db_secret_arn" --region $AWS_REGION --query "Parameter.Value" --output text)
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export DB_PASS=$(echo $SECRET_JSON | jq -r .password)
+          DB_SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $DB_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export DB_PASS=$(echo $DB_SECRET_JSON | jq -r .password)
 
-          echo "Fetching JWT for backend K8s..."
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          export JWT_TOKEN=$(echo $SECRET_JSON | jq -r .BACKEND_JWT_STRING)
+          APP_SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          export JWT_TOKEN=$(echo $APP_SECRET_JSON | jq -r .BACKEND_JWT_STRING)
 
           if [ -z "$DB_PASS" ] || [ -z "$JWT_TOKEN" ]; then
             echo "ERROR: Application secrets missing from Secrets Manager"
             exit 1
           fi
 
-          echo "Applying App Secrets..."
-          envsubst < deploy/secret-templates/app.yml | kubectl apply -f -
+          envsubst '$DB_PASS $JWT_TOKEN' < deploy/secret-templates/app.yml | kubectl apply -f -
+
+      - name: Apply Config Map for DB Initialization
+        run: |
+          kubectl create configmap db-init-script \
+            --from-file=init.sql=database/init.sql \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Wait for Load Balancer DNS
         run: |
-          echo "Waiting for ALB to be provisioned and DNS to be assigned..."
           kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
-            ingress/todo-ingress \
-            --timeout=10m
+            ingress/todo-ingress --timeout=10m
           ALB_DNS=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "ALB provisioned: $ALB_DNS"
 
-      - name: Update Porkbun DNS Record
+  update_dns:
+    name: "Update Porkbun DNS Record"
+    needs: deploy_application
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+
+      - name: Point DNS to ALB
         run: |
-          echo "Fetching ALB DNS..."
           ALB_DNS=$(kubectl get ingress todo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
-          echo "Fetching Porkbun Secrets..."
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
-          PORKBUN_API=$(echo $SECRET_JSON | jq -r .PORKBUN_API_KEY)
-          PORKBUN_SECRET=$(echo $SECRET_JSON | jq -r .PORKBUN_SECRET_KEY)
+          APP_SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
+          PORKBUN_API=$(echo $APP_SECRET_JSON | jq -r .PORKBUN_API_KEY)
+          PORKBUN_SECRET=$(echo $APP_SECRET_JSON | jq -r .PORKBUN_SECRET_KEY)
 
-          echo "Updating DNS Record for ALB on Porkbun..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
@@ -327,3 +331,5 @@ jobs:
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/CNAME/*" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
+
+          echo "DNS updated → $ALB_DNS"
