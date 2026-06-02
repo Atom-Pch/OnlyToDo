@@ -12,7 +12,7 @@ workflow:
 
 variables:
   GITHUB_USER: "Atom-Pch"
-  GITHUB_REPO: "TodoWebApp"
+  GITHUB_REPO: "OnlyToDo"
 
 morning_infra_create:
   stage: infra_create

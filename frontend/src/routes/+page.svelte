@@ -169,7 +169,7 @@
 		<p class="text-gray-500 text-sm mb-4">Built as a full DevOps Project</p>
 
 		<a 
-			href="https://github.com/Atom-Pch/TodoWebApp" 
+			href="https://github.com/Atom-Pch/OnlyToDo" 
 			target="_blank" 
 			rel="noopener noreferrer" 
 			class="text-gray-400 hover:text-white transition-colors duration-200 flex items-center gap-2 font-medium mb-4"
