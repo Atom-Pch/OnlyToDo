@@ -142,7 +142,7 @@ jobs:
         run: |
           # Fetch the 12-hour token
           ECR_TOKEN=$(aws ecr get-login-password --region us-east-2)
-          
+
           # Create the secret directly in the cluster
           kubectl create secret docker-registry aws-ecr-creds \
             --docker-server=131912109503.dkr.ecr.us-east-2.amazonaws.com \
@@ -191,13 +191,7 @@ jobs:
           for i in {1..5}; do
             if helm upgrade -i argocd-image-updater argo/argocd-image-updater \
               --namespace argocd \
-              --version 1.2.1 \
-              --set config.argocd.serverAddress=http://argocd-server.argocd.svc.cluster.local \
-              --set config.argocd.insecure=true \
-              --set config.argocd.grpcWeb=true \
-              --set config.registries[0].name=ECR \
-              --set config.registries[0].prefix="131912109503.dkr.ecr.us-east-2.amazonaws.com" \
-              --set config.registries[0].api_url="https://131912109503.dkr.ecr.us-east-2.amazonaws.com"; then
+              --version 1.2.1; then
                 echo "Helm argo/argocd-image-updater install successful!"
                 break
               fi
@@ -293,9 +287,6 @@ jobs:
 
           echo "Applying Manifests..."
           envsubst < k8s/eks/secrets/default-secrets.yml | kubectl apply -f -
-
-          export FRONTEND_IMG_TAG=${GITHUB_SHA::7}
-          export BACKEND_IMG_TAG=${GITHUB_SHA::7}
 
           for i in {1..5}; do
             if kubectl apply -f k8s/eks/ingress.yml; then
