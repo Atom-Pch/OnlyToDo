@@ -8,67 +8,67 @@ env:
   PORKBUN_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
   AWS_REGION: "us-east-2"
   PARK_DOMAIN: "onlytodo.xyz.s3-website.us-east-2.amazonaws.com"
+  EKS_CLUSTER: "todo-cluster"
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  destroy_infrastructure:
-    runs-on: ubuntu-22.04
+  park_domain:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-        with:
-          terraform_version: "1.14.8"
-
-      - name: Park Domain
+      - name: Park Domain On Porkbun
         run: |
-          echo "Fetching Porkbun Secrets..."
           PORKBUN_JSON=$(aws secretsmanager get-secret-value --secret-id $PORKBUN_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           export PORKBUN_API=$(echo $PORKBUN_JSON | jq -r .PORKBUN_API_KEY)
           export PORKBUN_SECRET=$(echo $PORKBUN_JSON | jq -r .PORKBUN_SECRET_KEY)
 
-          echo "Parking Domain..."
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/ALIAS" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$PARK_DOMAIN\", \"ttl\": \"600\" }" \
             > /dev/null
-          echo "Domain Parked Successfully."
 
           curl -X POST "https://api.porkbun.com/api/json/v3/dns/editByNameType/onlytodo.xyz/CNAME/*" \
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"pixie.porkbun.com\", \"ttl\": \"600\" }"
-          echo "Sub-Domain Parked Successfully."
+
+          echo -e "\nDomain Parked Successfully."
+
+  destroy_infrastructure:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.14.8"
+
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
       - name: EKS Ingress Cleanup
         run: |
-          echo "Get kubeconfig for EKS cluster..."
-          aws eks update-kubeconfig --region $AWS_REGION --name todo-cluster 2>/dev/null || true
-
-          echo "Fetching ALB DNS before deletion..."
-          ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+          ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
           if [ -n "$ALB_DNS" ]; then
-            echo "ALB DNS found: $ALB_DNS. Proceeding with cleanup..."
+            echo -e "ALB DNS found: $ALB_DNS\nProceeding with cleanup..."
+
             ALB_ARN=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '$ALB_DNS')].LoadBalancerArn" --output text)
 
-            echo "Forcing Finalizer removal to prevent pipeline hangs..."
-            kubectl patch ingress todo-ingress -n default -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
+            kubectl patch ingress todo-ingress -n default -p '{"metadata":{"finalizers":null}}' --type=merge
+            kubectl delete -f ./deploy/ingress.yml --ignore-not-found
 
-            echo "Deleting ingress resources..."
-            kubectl delete -f ./deploy/ingress.yml --ignore-not-found 2>/dev/null || true
             aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
-
-            echo "Waiting for AWS to destroy the ALB..."
             aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
           else
             echo "No ALB found in AWS. Skipping."
@@ -77,14 +77,12 @@ jobs:
       - name: Terraform Destroy
         working-directory: infra/terraform/
         run: |
-          echo "Excluding VPC.."
           terraform init
           terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
-
-          echo "Destroying the rest..."
           terraform destroy -auto-approve
 
-          echo "Now destroying leftover resources..."
+      - name: Cleaning Up VPC and Security Groups
+        run: |
           VPC_ID=$(aws ec2 describe-vpcs \
             --filters "Name=tag:Name,Values=todo-vpc" \
             --query 'Vpcs[0].VpcId' \
