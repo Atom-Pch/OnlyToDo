@@ -326,4 +326,4 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{ \"secretapikey\": \"$PORKBUN_SECRET\", \"apikey\": \"$PORKBUN_API\", \"content\": \"$ALB_DNS\", \"ttl\": \"3600\" }"
 
-          echo "DNS updated → $ALB_DNS"
+          echo -e "\nDNS updated: $ALB_DNS"
