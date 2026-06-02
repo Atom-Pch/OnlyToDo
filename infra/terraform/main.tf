@@ -29,14 +29,14 @@ provider "aws" {
 }
 
 module "vpc" {
-  source = "./vpc"
+  source = "./services/vpc"
 
   aws_region = var.aws_region
   vpc_cidr   = var.vpc_cidr
 }
 
 module "rds" {
-  source = "./rds"
+  source = "./services/rds"
 
   vpc_id          = module.vpc.vpc_id
   private_subnets = module.vpc.private_subnets
@@ -44,19 +44,19 @@ module "rds" {
 }
 
 module "ecr" {
-  source = "./ecr"
+  source = "./services/ecr"
 
   tag_policy = "IMMUTABLE_WITH_EXCLUSION"
 }
 
 module "s3" {
-  source = "./s3"
+  source = "./services/s3"
 
   aws_region = var.aws_region
 }
 
 module "eks" {
-  source = "./eks"
+  source = "./services/eks"
 
   vpc_id          = module.vpc.vpc_id
   private_subnets = module.vpc.private_subnets
