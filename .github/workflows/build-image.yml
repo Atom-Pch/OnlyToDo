@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   build:
+    name: Build and Push Docker Image
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
