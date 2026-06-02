@@ -170,7 +170,7 @@ jobs:
             echo "ERROR: Github token missing from Secrets Manager"
             exit 1
           fi
-          envsubst '$GITHUB_TOKEN' < deploy/secret-templates/argocd-secrets.yml | kubectl apply -f -
+          envsubst '$GITHUB_TOKEN' < deploy/secret-templates/argocd.yml | kubectl apply -f -
 
           helm repo add argo https://argoproj.github.io/argo-helm
           helm repo update argo
@@ -247,7 +247,7 @@ jobs:
           kubectl apply -f deploy/monitoring/backend-svcmon.yml
 
           echo "Applying Custom Prometheus Alerting Rules..."
-          kubectl apply -f deploy/monitoring/alerts.yml
+          kubectl apply -f deploy/monitoring/alert-rules.yml
 
       - name: Deploy Monitoring Services
         run: |
@@ -260,7 +260,7 @@ jobs:
             echo "ERROR: Grafana credentials missing from Secrets Manager"
             exit 1
           fi
-          envsubst '$GRAFANA_USER $GRAFANA_PASS' < deploy/secret-templates/grafana-secrets.yml | kubectl apply -f -
+          envsubst '$GRAFANA_USER $GRAFANA_PASS' < deploy/secret-templates/grafana.yml | kubectl apply -f -
 
           echo "Integrating Discord alerts..."
           export DISCORD_WEBHOOK=$(echo $SECRET_JSON | jq -r .DISCORD_WEBHOOK)
@@ -269,7 +269,7 @@ jobs:
             echo "ERROR: Discord webhook URL missing from Secrets Manager"
             exit 1
           fi
-          envsubst '$DISCORD_WEBHOOK' < deploy/secret-templates/alert-secrets.yml | kubectl apply -f -
+          envsubst '$DISCORD_WEBHOOK' < deploy/secret-templates/alertmanager.yml | kubectl apply -f -
 
           echo "Applying grafana dashboard..."
           kubectl apply -f deploy/monitoring/graf-dash-cfm.yml
@@ -298,7 +298,7 @@ jobs:
           fi
 
           echo "Applying App Secrets..."
-          envsubst < deploy/secret-templates/default-secrets.yml | kubectl apply -f -
+          envsubst < deploy/secret-templates/app.yml | kubectl apply -f -
 
       - name: Wait for Load Balancer DNS
         run: |
