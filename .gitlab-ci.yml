@@ -1,4 +1,6 @@
-# This is just a scheduler for Github Actions
+# This is NOT the main CI pipeline.
+# GitLab is used solely as an external cron scheduler to trigger GitHub Actions workflows for daily infra startup/teardown.
+# See: .github/workflows/infra-up.yml and infra-down.yml
 stages:
   - infra_create
   - infra_destroy

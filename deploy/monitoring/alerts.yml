@@ -1,4 +1,3 @@
-# k8s/eks/monitoring/alerts.yml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

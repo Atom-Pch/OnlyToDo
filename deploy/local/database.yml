@@ -1,4 +1,4 @@
-# For local Minikube testing
+# For local Minikube testing only
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

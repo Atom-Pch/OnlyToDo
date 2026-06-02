@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: todo-backend
+  name: todo-frontend
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/Atom-Pch/OnlyToDo.git
     targetRevision: main
-    path: gitops/charts/backend
+    path: deploy/charts/frontend
     helm:
       valueFiles:
         - values.yml
