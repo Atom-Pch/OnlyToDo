@@ -55,7 +55,12 @@ jobs:
           terraform_version: "1.14.8"
 
       - name: Configure kubectl
-        run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
+        run: |
+          if aws eks describe-cluster --name "$EKS_CLUSTER" --region "$AWS_REGION" --output text; then
+            aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER"
+          else
+            echo "Warning: Cluster $EKS_CLUSTER not found in $AWS_REGION. Skipping config generation."
+          fi
 
       - name: Delete ArgoCD Applications
         run: |
