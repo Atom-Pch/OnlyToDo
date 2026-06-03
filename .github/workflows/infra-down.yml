@@ -60,15 +60,35 @@ jobs:
       - name: Delete ArgoCD Applications
         run: |
           for app in onlytodo-frontend onlytodo-backend; do
-            kubectl patch application $app -n argocd \
-              --type=merge -p '{"metadata":{"finalizers":null}}'
-            kubectl delete application $app -n argocd
+            if [ -z "$(kubectl get app $app -n argocd --ignore-not-found -o name)" ]; then
+              echo "App '$app' not found, skipping patch."
+            else
+              kubectl patch application $app -n argocd --type=merge -p '{"metadata":{"finalizers":null}}'
+            fi
+            kubectl delete application $app -n argocd --ignore-not-found
           done
+
+      - name: Delete Ingress
+        run: |
+          ALB_DNS=$(kubectl get ingress onlytodo --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+          if [ -n "$ALB_DNS" ]; then
+            echo -e "ALB found: $ALB_DNS\nProceeding with cleanup..."
+
+            kubectl patch ingress onlytodo -p '{"metadata":{"finalizers":null}}' --type=merge
+            kubectl delete ingress onlytodo --ignore-not-found
+
+            ALB_ARN=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '$ALB_DNS')].LoadBalancerArn" --output text)
+            aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
+          else
+            echo "No ALB found in AWS. Skipping."
+          fi
 
       - name: Wait for ALB Removal
         run: |
           for i in $(seq 1 30); do
             ALB_DNS=$(kubectl get ingress onlytodo \
+              --ignore-not-found \
               -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
             if [ -z "$ALB_DNS" ]; then
