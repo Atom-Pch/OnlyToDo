@@ -246,6 +246,7 @@ jobs:
           kubectl apply -f deploy/monitoring/graf-dash-confmap.yml
 
   deploy_application:
+    name: Deploy Application
     needs: [upload_frontend, upload_backend, setup_argocd, setup_monitoring]
     runs-on: ubuntu-24.04
     steps:
