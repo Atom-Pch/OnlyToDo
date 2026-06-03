@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   park_domain:
+    name: Park Domain on Porkbun
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -40,7 +41,8 @@ jobs:
 
           echo -e "\nDomain Parked Successfully."
 
-  destroy_infrastructure:
+  destroy_infra:
+    name: Destroy Infrastructure
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -73,7 +75,6 @@ jobs:
 
             if [ -z "$ALB_DNS" ]; then
               echo "Ingress gone. Confirming ALB deletion in AWS..."
-              # Extra wait for AWS to fully remove ENIs from subnets
               sleep 30
               break
             fi
