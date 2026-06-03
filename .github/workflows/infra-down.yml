@@ -110,22 +110,14 @@ jobs:
         working-directory: infra/terraform/
         run: |
           terraform init
-          # terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
+          terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
           terraform destroy -auto-approve
 
-      # - name: Cleaning Up VPC and Security Groups
-      #   run: |
-      #     VPC_ID=$(aws ec2 describe-vpcs \
-      #       --filters "Name=tag:Name,Values=onlytodo" \
-      #       --query 'Vpcs[0].VpcId' \
-      #       --output text)
-      #     SEC_GRP_ID1=$(aws ec2 describe-security-groups \
-      #       --query "SecurityGroups[?GroupName!='default'].GroupId | [0]" \
-      #       --output text)
-      #     SEC_GRP_ID2=$(aws ec2 describe-security-groups \
-      #       --query "SecurityGroups[?GroupName!='default'].GroupId | [1]" \
-      #       --output text)
+      - name: Cleaning Up VPC and Security Groups
+        run: |
+          VPC_ID=$(aws ec2 describe-vpcs \
+            --filters "Name=tag:Name,Values=onlytodo" \
+            --query 'Vpcs[0].VpcId' \
+            --output text)
 
-      #     aws ec2 delete-security-group --group-id $SEC_GRP_ID1
-      #     aws ec2 delete-security-group --group-id $SEC_GRP_ID2
-      #     aws ec2 delete-vpc --vpc-id $VPC_ID
+          aws ec2 delete-vpc --vpc-id $VPC_ID
