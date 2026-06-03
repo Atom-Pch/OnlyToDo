@@ -1,5 +1,5 @@
 apiVersion: v2
-name: todo-backend
-description: Todo App Backend
+name: onlytodo-backend
+description: OnlyToDo App Backend
 version: 1.0.0
 appVersion: 1.0.0

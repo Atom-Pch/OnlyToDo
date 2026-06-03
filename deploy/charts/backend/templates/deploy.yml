@@ -38,7 +38,7 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets-app
+                  name: onlytodo-secrets-app
                   key: db_pass
           command:
             - sh
@@ -79,15 +79,15 @@ spec:
           env:
             # Later for EKS, we will move these to ConfigMaps and Secrets!
             - name: DB_HOST
-              value: "todo-db.c962yekmm5ja.us-east-2.rds.amazonaws.com"
+              value: "onlytodo.c962yekmm5ja.us-east-2.rds.amazonaws.com"
             - name: DB_PORT
               value: "5432"
             - name: DB_USER
               value: "atom"
             - name: DB_NAME
-              value: "todo_db"
+              value: "onlytodo"
             - name: S3_BUCKET_NAME
-              value: "todo-files-131912109503-us-east-2-an"
+              value: "onlytodo-files-131912109503-us-east-2-an"
             - name: AWS_REGION
               value: "us-east-2"
             - name: PORT
@@ -97,12 +97,12 @@ spec:
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets-app
+                  name: onlytodo-secrets-app
                   key: db_pass
             - name: JWT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: todo-secrets-app
+                  name: onlytodo-secrets-app
                   key: jwt_token
 
           # Readiness and Liveness Probes
