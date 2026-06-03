@@ -5,7 +5,7 @@ global:
 server:
   # CRITICAL: TLS terminates at ALB, so argocd-server runs in HTTP mode
   extraArgs:
-    - --insecure
+    - "--insecure"
   replicas: 2
   ingress:
     enabled: true
