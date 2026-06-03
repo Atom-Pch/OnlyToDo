@@ -38,7 +38,7 @@ spec:
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: onlytodo-secrets-app
+                  name: onlytodo-backend
                   key: db_pass
           command:
             - sh
@@ -97,12 +97,12 @@ spec:
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
-                  name: onlytodo-secrets-app
+                  name: onlytodo-backend
                   key: db_pass
             - name: JWT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: onlytodo-secrets-app
+                  name: onlytodo-backend
                   key: jwt_token
 
           # Readiness and Liveness Probes

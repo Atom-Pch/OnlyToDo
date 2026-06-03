@@ -1,7 +1,7 @@
 apiVersion: argocd-image-updater.argoproj.io/v1alpha1
 kind: ImageUpdater
 metadata:
-  name: onlytodo-backend-updater
+  name: onlytodo-backend
   namespace: argocd
 spec:
   writeBackConfig:
@@ -26,7 +26,7 @@ spec:
 apiVersion: argocd-image-updater.argoproj.io/v1alpha1
 kind: ImageUpdater
 metadata:
-  name: onlytodo-frontend-updater
+  name: onlytodo-frontend
   namespace: argocd
 spec:
   writeBackConfig:

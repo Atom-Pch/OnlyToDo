@@ -134,7 +134,7 @@ module "backend_pod_identity" {
 }
 
 resource "aws_iam_policy" "argocd_image_updater_ecr" {
-  name = "onlytodo-argocd-image-updater-ecr"
+  name = "OnlyToDoArgoCDImageUpdaterEcrAccess"
 
   policy = jsonencode({
     Version = "2012-10-17"

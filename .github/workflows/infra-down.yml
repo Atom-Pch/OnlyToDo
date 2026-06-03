@@ -67,9 +67,9 @@ jobs:
       - name: Wait for ALB Removal
         run: |
           for i in $(seq 1 30); do
-            ALB_DNS=$(kubectl get ingress onlytodo-ingress -n default \
+            ALB_DNS=$(kubectl get ingress onlytodo \
               --ignore-not-found \
-              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
             if [ -z "$ALB_DNS" ]; then
               echo "Ingress gone. Confirming ALB deletion in AWS..."
