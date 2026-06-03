@@ -61,8 +61,7 @@ jobs:
         run: |
           for app in frontend backend; do
             kubectl patch application $app -n argocd \
-              --type=merge -p '{"metadata":{"finalizers":null}}' \
-              --ignore-not-found
+              --type=merge -p '{"metadata":{"finalizers":null}}'
             kubectl delete application $app -n argocd --ignore-not-found
           done
 
