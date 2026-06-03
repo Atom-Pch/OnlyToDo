@@ -22,8 +22,6 @@ resource "aws_s3_bucket_cors_configuration" "this" {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "DELETE"]
     allowed_origins = [
-      "http://localhost:5173",
-      "http://localhost:3000",
       "https://onlytodo.xyz"
     ]
     max_age_seconds = 3600
