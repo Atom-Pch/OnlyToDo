@@ -1,6 +1,6 @@
 resource "aws_db_subnet_group" "this" {
-  name        = "todo-db-subnet-group"
-  description = "subnet group for todo DB"
+  name        = "onlytodo-db-subnet-group"
+  description = "subnet group for OnlyToDo DB"
 
   subnet_ids = var.private_subnets
 }
@@ -9,14 +9,14 @@ module "rds" {
   source  = "terraform-aws-modules/rds/aws"
   version = ">= 7.2.0"
 
-  identifier           = "todo-db"
+  identifier           = "onlytodo"
   allocated_storage    = 20
   storage_type         = "gp2"
   engine               = "postgres"
   engine_version       = "18.2"
   instance_class       = "db.t3.micro"
   username             = "atom"
-  db_name              = "todo_db"
+  db_name              = "onlytodo"
   family               = "postgres18"
   major_engine_version = "18.0"
 
@@ -29,8 +29,8 @@ module "rds" {
 
   # Backup config
   backup_retention_period          = 1 # Must be > 0 to enable backups
-  backup_window                    = "18:00-21:00"
-  final_snapshot_identifier_prefix = "todo-dbsnap"
+  backup_window                    = "08:00-10:00"
+  final_snapshot_identifier_prefix = "onlytodo-dbsnap"
 }
 
 # SECURITY GROUP #
@@ -38,8 +38,8 @@ module "rds_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = ">= 5.3.1"
 
-  name        = "todo-rds-sg"
-  description = "Allow todo RDS service to receive connections from backend and local"
+  name        = "onlytodo-rds-sg"
+  description = "Allow OnlyToDo RDS service to receive connections from backend and local"
   vpc_id      = var.vpc_id
 
   ingress_rules       = ["postgresql-tcp"]
@@ -51,7 +51,7 @@ module "rds_sg" {
 
 # Writes the new Secret ARN to a static SSM Parameter path
 resource "aws_ssm_parameter" "db_secret_arn" {
-  name  = "/todo/config/db_secret_arn"
+  name  = "/onlytodo/config/db_secret_arn"
   type  = "String"
   value = module.rds.db_instance_master_user_secret_arn
 }

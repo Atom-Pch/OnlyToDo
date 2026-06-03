@@ -1,7 +1,7 @@
 apiVersion: argocd-image-updater.argoproj.io/v1alpha1
 kind: ImageUpdater
 metadata:
-  name: todo-backend-updater
+  name: onlytodo-backend-updater
   namespace: argocd
 spec:
   writeBackConfig:
@@ -11,10 +11,10 @@ spec:
       branch: "main"
       writeBackTarget: "helmvalues:values.yml"
   applicationRefs:
-    - namePattern: "todo-backend"
+    - namePattern: "onlytodo-backend"
       images:
         - alias: "backend"
-          imageName: "131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-backend-repo"
+          imageName: "131912109503.dkr.ecr.us-east-2.amazonaws.com/onlytodo-backend"
           manifestTargets:
             helm:
               name: image.repository
@@ -26,7 +26,7 @@ spec:
 apiVersion: argocd-image-updater.argoproj.io/v1alpha1
 kind: ImageUpdater
 metadata:
-  name: todo-frontend-updater
+  name: onlytodo-frontend-updater
   namespace: argocd
 spec:
   writeBackConfig:
@@ -36,10 +36,10 @@ spec:
       branch: "main"
       writeBackTarget: "helmvalues:values.yml"
   applicationRefs:
-    - namePattern: "todo-frontend"
+    - namePattern: "onlytodo-frontend"
       images:
         - alias: "frontend"
-          imageName: "131912109503.dkr.ecr.us-east-2.amazonaws.com/todo-frontend-repo"
+          imageName: "131912109503.dkr.ecr.us-east-2.amazonaws.com/onlytodo-frontend"
           manifestTargets:
             helm:
               name: image.repository

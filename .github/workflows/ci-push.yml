@@ -12,8 +12,8 @@ env:
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitHubActionsRole"
   AWS_ACCOUNT_ID: "131912109503"
   AWS_REGION: "us-east-2"
-  FRONTEND_REPO: "todo-frontend-repo"
-  BACKEND_REPO: "todo-backend-repo"
+  FRONTEND_REPO: "onlytodo-frontend"
+  BACKEND_REPO: "onlytodo-backend"
 
 permissions:
   id-token: write
@@ -44,12 +44,12 @@ jobs:
     needs: playwright_test
     uses: ./.github/workflows/build-image.yml
     with:
-      repo_name: todo-frontend-repo
+      repo_name: onlytodo-frontend
       context: ./frontend
 
   build_backend:
     needs: playwright_test
     uses: ./.github/workflows/build-image.yml
     with:
-      repo_name: todo-backend-repo
+      repo_name: onlytodo-backend
       context: ./backend

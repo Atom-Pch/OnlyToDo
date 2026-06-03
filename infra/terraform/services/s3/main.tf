@@ -1,10 +1,10 @@
 data "aws_caller_identity" "current" {}
 
-module "todo_bucket" {
+module "onlytodo_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = ">= 5.12.0"
 
-  bucket           = format("todo-files-%s-%s-an", data.aws_caller_identity.current.account_id, var.aws_region)
+  bucket           = format("onlytodo-files-%s-%s-an", data.aws_caller_identity.current.account_id, var.aws_region)
   bucket_namespace = "account-regional"
 
   block_public_acls       = true
@@ -16,7 +16,7 @@ module "todo_bucket" {
 }
 
 resource "aws_s3_bucket_cors_configuration" "this" {
-  bucket = module.todo_bucket.s3_bucket_id
+  bucket = module.onlytodo_bucket.s3_bucket_id
 
   cors_rule {
     allowed_headers = ["*"]

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: todo-secrets-alertmanager
+  name: onlytodo-secrets-alertmanager
   namespace: monitoring
 type: Opaque
 stringData:

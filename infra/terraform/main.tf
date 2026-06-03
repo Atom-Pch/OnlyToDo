@@ -10,7 +10,7 @@ terraform {
 
   backend "s3" {
     bucket       = "terraform-state-131912109503-us-east-2-an"
-    key          = "todo/terraform.tfstate"
+    key          = "OnlyToDo/terraform.tfstate"
     region       = "us-east-2"
     encrypt      = true
     use_lockfile = true
@@ -23,7 +23,7 @@ provider "aws" {
   default_tags {
     tags = {
       Creator = "Terraform"
-      Project = "TodoApp"
+      Project = "OnlyToDo"
     }
   }
 }

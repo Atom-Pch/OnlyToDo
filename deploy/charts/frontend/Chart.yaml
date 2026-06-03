@@ -1,5 +1,5 @@
 apiVersion: v2
-name: todo-frontend
-description: Todo App Frontend
+name: onlytodo-frontend
+description: OnlyToDo App Frontend
 version: 1.0.0
 appVersion: "1.0.0"

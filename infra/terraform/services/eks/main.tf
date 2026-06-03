@@ -2,7 +2,7 @@ module "eks-pod-identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
   version = ">= 2.8.0"
 
-  name = "todo-vpc-cni-role"
+  name = "onlytodo-vpc-cni-role"
 
   attach_aws_vpc_cni_policy = true
   aws_vpc_cni_enable_ipv4   = true
@@ -20,7 +20,7 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = ">= 21.20.0"
 
-  name               = "todo-cluster"
+  name               = "onlytodo"
   kubernetes_version = "1.35"
 
   vpc_id                   = var.vpc_id
@@ -54,7 +54,7 @@ module "eks" {
 
   # EKS Managed Node Group
   eks_managed_node_groups = {
-    todo_nodes = {
+    onlytodo_nodes = {
       # AL2023 is the default AMI type for EKS managed node groups starting 1.30
       ami_type = "AL2023_x86_64_STANDARD"
 
@@ -90,7 +90,7 @@ module "aws_lb_controller_pod_identity" {
 
 # S3 access policy
 resource "aws_iam_policy" "backend_s3" {
-  name        = "todo-backend-s3-policy"
+  name        = "onlytodo-s3-backend"
   description = "Allows backend to upload files to S3"
 
   policy = jsonencode({
@@ -105,8 +105,8 @@ resource "aws_iam_policy" "backend_s3" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::todo-files-131912109503-us-east-2-an",
-          "arn:aws:s3:::todo-files-131912109503-us-east-2-an/*"
+          "arn:aws:s3:::onlytodo-files-131912109503-us-east-2-an",
+          "arn:aws:s3:::onlytodo-files-131912109503-us-east-2-an/*"
         ]
       }
     ]
@@ -119,7 +119,7 @@ module "backend_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
   version = ">= 1.12.1"
 
-  name = "todo-backend-s3-role"
+  name = "OnlyToDoS3BackendAccessRole"
 
   additional_policy_arns = { s3 = aws_iam_policy.backend_s3.arn }
 
@@ -134,7 +134,7 @@ module "backend_pod_identity" {
 }
 
 resource "aws_iam_policy" "argocd_image_updater_ecr" {
-  name = "todo-argocd-image-updater-ecr"
+  name = "onlytodo-argocd-image-updater-ecr"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -159,7 +159,7 @@ module "argocd_image_updater_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
   version = ">= 1.12.1"
 
-  name                   = "todo-argocd-image-updater"
+  name                   = "OnlyToDoArgoCDImageUpdaterRole"
   additional_policy_arns = { ecr = aws_iam_policy.argocd_image_updater_ecr.arn }
 
   associations = {

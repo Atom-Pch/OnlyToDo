@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: todo-secrets-argocd
+  name: onlytodo-secrets-argocd
   namespace: argocd
   labels:
     argocd.argoproj.io/secret-type: repository
 type: Opaque
 stringData:
   url: "https://github.com/Atom-Pch/OnlyToDo"
-  name: "todo-app"
+  name: "onlytodo-app"
   type: "git"
   username: "github"
   password: "${GITHUB_TOKEN}"

@@ -16,7 +16,7 @@ server:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:131912109503:certificate/3f2971ec-a640-4a4d-8c86-5a67a803d284
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
       alb.ingress.kubernetes.io/ssl-redirect: "443"
-      alb.ingress.kubernetes.io/group.name: todo-shared-alb # shares your existing ALB
+      alb.ingress.kubernetes.io/group.name: onlytodo-shared-alb # shares your existing ALB
       alb.ingress.kubernetes.io/group.order: "20"
     hostname: argocd.onlytodo.xyz
     path: /

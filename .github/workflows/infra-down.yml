@@ -5,10 +5,10 @@ on:
 
 env:
   AWS_ROLE_ARN: "arn:aws:iam::131912109503:role/GitHubActionsRole"
-  PORKBUN_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:todo-app-secrets-14Gg8G"
+  PORKBUN_SECRET_ARN: "arn:aws:secretsmanager:us-east-2:131912109503:secret:OnlyToDo/Prod/All-rIjbxb"
   AWS_REGION: "us-east-2"
   PARK_DOMAIN: "onlytodo.xyz.s3-website.us-east-2.amazonaws.com"
-  EKS_CLUSTER: "todo-cluster"
+  EKS_CLUSTER: "onlytodo"
 
 permissions:
   id-token: write
@@ -67,7 +67,7 @@ jobs:
       - name: Wait for ALB Removal
         run: |
           for i in $(seq 1 30); do
-            ALB_DNS=$(kubectl get ingress todo-ingress -n default \
+            ALB_DNS=$(kubectl get ingress onlytodo-ingress -n default \
               --ignore-not-found \
               -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
 
@@ -97,7 +97,7 @@ jobs:
       # - name: Cleaning Up VPC and Security Groups
       #   run: |
       #     VPC_ID=$(aws ec2 describe-vpcs \
-      #       --filters "Name=tag:Name,Values=todo-vpc" \
+      #       --filters "Name=tag:Name,Values=onlytodo" \
       #       --query 'Vpcs[0].VpcId' \
       #       --output text)
       #     SEC_GRP_ID1=$(aws ec2 describe-security-groups \

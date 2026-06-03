@@ -13,7 +13,7 @@ module "frontend_repo" {
   source  = "terraform-aws-modules/ecr/aws"
   version = ">= 3.2.0"
 
-  repository_name = "todo-frontend-repo"
+  repository_name = "onlytodo-frontend"
   repository_type = "private"
 
   repository_image_tag_mutability = var.tag_policy
@@ -48,7 +48,7 @@ module "backend_repo" {
   source  = "terraform-aws-modules/ecr/aws"
   version = ">= 3.2.0"
 
-  repository_name = "todo-backend-repo"
+  repository_name = "onlytodo-backend"
   repository_type = "private"
 
   repository_image_tag_mutability = var.tag_policy

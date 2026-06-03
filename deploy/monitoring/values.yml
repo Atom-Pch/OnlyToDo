@@ -14,7 +14,7 @@ prometheus:
 
 grafana:
   admin:
-    existingSecret: todo-secrets-grafana
+    existingSecret: onlytodo-secrets-grafana
     userKey: admin-user
     passwordKey: admin-password
   persistence:
@@ -41,7 +41,7 @@ grafana:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:131912109503:certificate/3f2971ec-a640-4a4d-8c86-5a67a803d284
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
       alb.ingress.kubernetes.io/ssl-redirect: "443"
-      alb.ingress.kubernetes.io/group.name: todo-shared-alb # Groups them together!
+      alb.ingress.kubernetes.io/group.name: onlytodo-shared-alb # Groups them together!
       alb.ingress.kubernetes.io/group.order: "10"
     hosts:
       - monitoring.onlytodo.xyz
@@ -60,7 +60,7 @@ alertmanager:
 
   alertmanagerSpec:
     secrets:
-      - todo-secrets-alertmanager # mounts the secret into the pod
+      - onlytodo-secrets-alertmanager # mounts the secret into the pod
 
   config:
     global:
@@ -92,7 +92,7 @@ alertmanager:
       - name: "null"
       - name: discord
         slack_configs:
-          - api_url_file: /etc/alertmanager/secrets/todo-secrets-alertmanager/discord-webhook
+          - api_url_file: /etc/alertmanager/secrets/onlytodo-secrets-alertmanager/discord-webhook
             send_resolved: true
             title:
               '{{ if eq .Status "firing" }}🔥{{ else }}✅{{ end }} [{{ .Status | toUpper

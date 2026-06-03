@@ -3,7 +3,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = ">= 6.6.1"
 
-  name = "todo-vpc"
+  name = "onlytodo"
   cidr = var.vpc_cidr
 
   azs = ["us-east-2a", "us-east-2b"]
@@ -18,8 +18,8 @@ module "vpc" {
     "kubernetes.io/role/internal-elb" = 1
   }
 
-  public_subnet_names  = ["todo-subnet-public1-us-east-2a", "todo-subnet-public2-us-east-2b"]
-  private_subnet_names = ["todo-subnet-private1-us-east-2a", "todo-subnet-private2-us-east-2b"]
+  public_subnet_names  = ["onlytodo-public1-us-east-2a", "onlytodo-public2-us-east-2b"]
+  private_subnet_names = ["onlytodo-private1-us-east-2a", "onlytodo-private2-us-east-2b"]
 
   enable_nat_gateway   = false
   enable_dns_hostnames = true
@@ -27,13 +27,13 @@ module "vpc" {
 
   create_igw = true
   igw_tags = {
-    name = "todo-igw"
+    name = "onlytodo"
   }
   public_route_table_tags = {
-    name = "todo-rtb-public"
+    name = "onlytodo-public"
   }
   private_route_table_tags = {
-    name = "todo-rtb-private"
+    name = "onlytodo-private"
   }
 
   enable_flow_log                      = false
@@ -46,7 +46,7 @@ module "vpce_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = ">= 5.3.1"
 
-  name        = "vpce-endpoints-sg"
+  name        = "onlytodo-vpce"
   description = "Allow connections for VPC endpoint"
   vpc_id      = module.vpc.vpc_id
 
@@ -61,7 +61,7 @@ module "vpce_sg" {
 module "fck_nat" {
   source = "RaJiska/fck-nat/aws"
 
-  name      = "todo-fck-nat"
+  name      = "onlytodo"
   vpc_id    = module.vpc.vpc_id            # Replace with your actual VPC ID reference
   subnet_id = module.vpc.public_subnets[0] # Must be placed in a public subnet
   ha_mode   = true
@@ -84,7 +84,7 @@ resource "aws_vpc_endpoint" "s3" {
 
   route_table_ids = module.vpc.private_route_table_ids
 
-  tags = { Name = "todo-vpce-s3" }
+  tags = { Name = "onlytodo-s3" }
 }
 
 resource "aws_vpc_endpoint" "ecr_dkr" {
@@ -96,7 +96,7 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
 
   private_dns_enabled = true
 
-  tags = { Name = "todo-vpce-ecr.dkr" }
+  tags = { Name = "onlytodo-ecr.dkr" }
 }
 
 resource "aws_vpc_endpoint" "ecr_api" {
@@ -108,7 +108,7 @@ resource "aws_vpc_endpoint" "ecr_api" {
 
   private_dns_enabled = true
 
-  tags = { Name = "todo-vpce-ecr.api" }
+  tags = { Name = "onlytodo-ecr.api" }
 }
 
 resource "aws_vpc_endpoint" "logs" {
@@ -120,7 +120,7 @@ resource "aws_vpc_endpoint" "logs" {
 
   private_dns_enabled = true
 
-  tags = { Name = "todo-vpce-cloudwatch-logs" }
+  tags = { Name = "onlytodo-cloudwatch-logs" }
 }
 
 resource "aws_vpc_endpoint" "secret" {
@@ -132,7 +132,7 @@ resource "aws_vpc_endpoint" "secret" {
 
   private_dns_enabled = true
 
-  tags = { Name = "todo-vpce-secret-manager" }
+  tags = { Name = "onlytodo-secret-manager" }
 }
 
 resource "aws_vpc_endpoint" "sts" {
@@ -143,7 +143,7 @@ resource "aws_vpc_endpoint" "sts" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = { Name = "todo-vpce-sts" }
+  tags = { Name = "onlytodo-sts" }
 }
 
 resource "aws_vpc_endpoint" "ec2" {
@@ -154,7 +154,7 @@ resource "aws_vpc_endpoint" "ec2" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = { Name = "todo-vpce-ec2" }
+  tags = { Name = "onlytodo-ec2" }
 }
 
 resource "aws_vpc_endpoint" "eks" {
@@ -165,7 +165,7 @@ resource "aws_vpc_endpoint" "eks" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = { Name = "todo-vpce-eks" }
+  tags = { Name = "onlytodo-eks" }
 }
 
 resource "aws_vpc_endpoint" "autoscaling" {
@@ -176,7 +176,7 @@ resource "aws_vpc_endpoint" "autoscaling" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = { Name = "todo-vpce-autoscaling" }
+  tags = { Name = "onlytodo-autoscaling" }
 }
 
 resource "aws_vpc_endpoint" "eks_auth" {
@@ -187,7 +187,7 @@ resource "aws_vpc_endpoint" "eks_auth" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = { Name = "todo-vpce-eks-auth" }
+  tags = { Name = "onlytodo-eks-auth" }
 }
 
 resource "aws_vpc_endpoint" "elasticloadbalancing" {
@@ -198,7 +198,7 @@ resource "aws_vpc_endpoint" "elasticloadbalancing" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = { Name = "todo-vpce-elb" }
+  tags = { Name = "onlytodo-elb" }
 }
 
 resource "aws_vpc_endpoint" "acm" {
@@ -209,5 +209,5 @@ resource "aws_vpc_endpoint" "acm" {
   subnet_ids          = module.vpc.private_subnets
   security_group_ids  = [module.vpce_sg.security_group_id]
 
-  tags = { Name = "todo-vpce-acm" }
+  tags = { Name = "onlytodo-acm" }
 }

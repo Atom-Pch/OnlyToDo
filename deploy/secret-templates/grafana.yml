@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: todo-secrets-grafana
+  name: onlytodo-secrets-grafana
   namespace: monitoring
 type: Opaque
 stringData:

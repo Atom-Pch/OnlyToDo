@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: ./backend
-    image: todo-backend
+    image: onlytodo-backend
     container_name: go
     environment:
       DB_HOST: $DB_HOST
@@ -19,7 +19,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    image: todo-frontend
+    image: onlytodo-frontend
     container_name: sveltekit
     ports:
       - "${FRONTEND_PORT}:3000"
