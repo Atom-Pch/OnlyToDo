@@ -44,9 +44,6 @@ module "rds_sg" {
 
   ingress_rules       = ["postgresql-tcp"]
   ingress_cidr_blocks = [var.vpc_cidr]
-
-  egress_rules       = ["all-tcp"]
-  egress_cidr_blocks = ["0.0.0.0/0"]
 }
 
 # Writes the new Secret ARN to a static SSM Parameter path

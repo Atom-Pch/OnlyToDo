@@ -52,9 +52,6 @@ module "vpce_sg" {
 
   ingress_rules       = ["https-443-tcp"]
   ingress_cidr_blocks = [var.vpc_cidr]
-
-  egress_rules       = ["all-tcp"]
-  egress_cidr_blocks = ["0.0.0.0/0"]
 }
 
 # NAT GATEWAY (fck-nat)
