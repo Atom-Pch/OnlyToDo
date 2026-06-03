@@ -7,7 +7,7 @@ resource "aws_db_subnet_group" "this" {
 
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
-  version = ">= 7.2.0"
+  version = "7.2.0"
 
   identifier           = "onlytodo"
   allocated_storage    = 20
@@ -36,7 +36,7 @@ module "rds" {
 # SECURITY GROUP #
 module "rds_sg" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = ">= 5.3.1"
+  version = "5.3.1"
 
   name        = "onlytodo-rds"
   description = "Allow OnlyToDo RDS service to receive connections from backend and local"

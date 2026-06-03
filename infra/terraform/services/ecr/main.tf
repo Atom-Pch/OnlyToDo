@@ -11,7 +11,7 @@ resource "aws_ecr_registry_scanning_configuration" "scan" {
 
 module "frontend_repo" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = ">= 3.2.0"
+  version = "3.2.0"
 
   repository_name = "onlytodo-frontend"
   repository_type = "private"
@@ -46,7 +46,7 @@ module "frontend_repo" {
 
 module "backend_repo" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = ">= 3.2.0"
+  version = "3.2.0"
 
   repository_name = "onlytodo-backend"
   repository_type = "private"

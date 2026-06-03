@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 module "onlytodo_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = ">= 5.12.0"
+  version = "5.12.0"
 
   bucket           = format("onlytodo-files-%s-%s-an", data.aws_caller_identity.current.account_id, var.aws_region)
   bucket_namespace = "account-regional"

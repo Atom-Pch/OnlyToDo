@@ -1,6 +1,6 @@
 module "eks-pod-identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = ">= 2.8.0"
+  version = "2.8.0"
 
   name = "onlytodo-vpc-cni-role"
 
@@ -18,7 +18,7 @@ module "eks-pod-identity" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = ">= 21.20.0"
+  version = "21.20.0"
 
   name               = "onlytodo"
   kubernetes_version = "1.35"
@@ -71,7 +71,7 @@ module "eks" {
 
 module "aws_lb_controller_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = ">= 1.12.1"
+  version = "1.12.1"
 
   name = "aws-load-balancer-controller"
 
@@ -117,7 +117,7 @@ resource "aws_iam_policy" "backend_s3" {
 # Use the exact same module to bind it to your backend
 module "backend_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = ">= 1.12.1"
+  version = "1.12.1"
 
   name = "OnlyToDoS3BackendAccessRole"
 
@@ -157,7 +157,7 @@ resource "aws_iam_policy" "argocd_image_updater_ecr" {
 
 module "argocd_image_updater_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = ">= 1.12.1"
+  version = "1.12.1"
 
   name                   = "OnlyToDoArgoCDImageUpdaterRole"
   additional_policy_arns = { ecr = aws_iam_policy.argocd_image_updater_ecr.arn }

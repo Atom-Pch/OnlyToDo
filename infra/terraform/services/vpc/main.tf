@@ -1,7 +1,7 @@
 # VPC
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = ">= 6.6.1"
+  version = "6.6.1"
 
   name = "onlytodo"
   cidr = var.vpc_cidr
@@ -44,7 +44,7 @@ module "vpc" {
 # SECURITY GROUP
 module "vpce_sg" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = ">= 5.3.1"
+  version = "5.3.1"
 
   name        = "onlytodo-vpce"
   description = "Allow connections for VPC endpoint"
