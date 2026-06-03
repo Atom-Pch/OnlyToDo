@@ -38,7 +38,7 @@ module "rds_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = ">= 5.3.1"
 
-  name        = "onlytodo-rds-sg"
+  name        = "onlytodo-rds"
   description = "Allow OnlyToDo RDS service to receive connections from backend and local"
   vpc_id      = var.vpc_id
 
