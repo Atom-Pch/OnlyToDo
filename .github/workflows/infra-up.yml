@@ -291,8 +291,8 @@ jobs:
         run: |
           sleep 30
           kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
-            ingress/onlytodo-alb --timeout=10m
-          ALB_DNS=$(kubectl get ingress onlytodo-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            ingress/onlytodo-ingress --timeout=10m
+          ALB_DNS=$(kubectl get ingress onlytodo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
           echo "ALB provisioned: $ALB_DNS"
 
   update_dns:
@@ -311,7 +311,7 @@ jobs:
 
       - name: Point DNS to ALB
         run: |
-          ALB_DNS=$(kubectl get ingress onlytodo-alb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          ALB_DNS=$(kubectl get ingress onlytodo-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
           APP_SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id $APP_SECRET_ARN --region $AWS_REGION --query SecretString --output text)
           PORKBUN_API=$(echo $APP_SECRET_JSON | jq -r .PORKBUN_API_KEY)
