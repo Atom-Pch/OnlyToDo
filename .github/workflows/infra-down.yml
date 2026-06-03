@@ -55,45 +55,58 @@ jobs:
       - name: Configure kubectl
         run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER
 
-      - name: EKS Ingress Cleanup
+      - name: Delete ArgoCD Applications
         run: |
-          ALB_DNS=$(kubectl get ingress todo-ingress --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          for app in frontend backend; do
+            kubectl patch application $app -n argocd \
+              --type=merge -p '{"metadata":{"finalizers":null}}' \
+              --ignore-not-found
+            kubectl delete application $app -n argocd --ignore-not-found
+          done
 
-          if [ -n "$ALB_DNS" ]; then
-            echo -e "ALB DNS found: $ALB_DNS\nProceeding with cleanup..."
+      - name: Wait for ALB Removal
+        run: |
+          for i in $(seq 1 30); do
+            ALB_DNS=$(kubectl get ingress todo-ingress -n default \
+              --ignore-not-found \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
 
-            ALB_ARN=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '$ALB_DNS')].LoadBalancerArn" --output text)
+            if [ -z "$ALB_DNS" ]; then
+              echo "Ingress gone. Confirming ALB deletion in AWS..."
+              # Extra wait for AWS to fully remove ENIs from subnets
+              sleep 30
+              break
+            fi
 
-            kubectl patch ingress todo-ingress -n default -p '{"metadata":{"finalizers":null}}' --type=merge
-            kubectl delete -f ./deploy/ingress.yml --ignore-not-found
+            echo "Still waiting... ($((i * 10))s elapsed)"
+            sleep 10
 
-            aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
-            aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
-            sleep 30
-          else
-            echo "No ALB found in AWS. Skipping."
-          fi
+            if [ $i -eq 30 ]; then
+              echo "ERROR: ALB not removed after 5 minutes. Aborting."
+              exit 1
+            fi
+          done
 
       - name: Terraform Destroy
         working-directory: infra/terraform/
         run: |
           terraform init
-          terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
+          # terraform state rm module.vpc.module.vpc.aws_vpc.this[0]
           terraform destroy -auto-approve
 
-      - name: Cleaning Up VPC and Security Groups
-        run: |
-          VPC_ID=$(aws ec2 describe-vpcs \
-            --filters "Name=tag:Name,Values=todo-vpc" \
-            --query 'Vpcs[0].VpcId' \
-            --output text)
-          SEC_GRP_ID1=$(aws ec2 describe-security-groups \
-            --query "SecurityGroups[?GroupName!='default'].GroupId | [0]" \
-            --output text)
-          SEC_GRP_ID2=$(aws ec2 describe-security-groups \
-            --query "SecurityGroups[?GroupName!='default'].GroupId | [1]" \
-            --output text)
+      # - name: Cleaning Up VPC and Security Groups
+      #   run: |
+      #     VPC_ID=$(aws ec2 describe-vpcs \
+      #       --filters "Name=tag:Name,Values=todo-vpc" \
+      #       --query 'Vpcs[0].VpcId' \
+      #       --output text)
+      #     SEC_GRP_ID1=$(aws ec2 describe-security-groups \
+      #       --query "SecurityGroups[?GroupName!='default'].GroupId | [0]" \
+      #       --output text)
+      #     SEC_GRP_ID2=$(aws ec2 describe-security-groups \
+      #       --query "SecurityGroups[?GroupName!='default'].GroupId | [1]" \
+      #       --output text)
 
-          aws ec2 delete-security-group --group-id $SEC_GRP_ID1
-          aws ec2 delete-security-group --group-id $SEC_GRP_ID2
-          aws ec2 delete-vpc --vpc-id $VPC_ID
+      #     aws ec2 delete-security-group --group-id $SEC_GRP_ID1
+      #     aws ec2 delete-security-group --group-id $SEC_GRP_ID2
+      #     aws ec2 delete-vpc --vpc-id $VPC_ID
