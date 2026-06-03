@@ -59,17 +59,16 @@ jobs:
 
       - name: Delete ArgoCD Applications
         run: |
-          for app in frontend backend; do
+          for app in onlytodo-frontend onlytodo-backend; do
             kubectl patch application $app -n argocd \
               --type=merge -p '{"metadata":{"finalizers":null}}'
-            kubectl delete application $app -n argocd --ignore-not-found
+            kubectl delete application $app -n argocd
           done
 
       - name: Wait for ALB Removal
         run: |
           for i in $(seq 1 30); do
             ALB_DNS=$(kubectl get ingress onlytodo \
-              --ignore-not-found \
               -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
             if [ -z "$ALB_DNS" ]; then
