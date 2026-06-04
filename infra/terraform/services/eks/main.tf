@@ -54,7 +54,7 @@ module "eks" {
 
   # EKS Managed Node Group
   eks_managed_node_groups = {
-    onlytodo_nodes = {
+    onlytodo-nodes = {
       # AL2023 is the default AMI type for EKS managed node groups starting 1.30
       ami_type = "AL2023_x86_64_STANDARD"
 

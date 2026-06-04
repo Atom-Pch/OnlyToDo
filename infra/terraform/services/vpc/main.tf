@@ -58,7 +58,7 @@ module "vpce_sg" {
 module "fck_nat" {
   source = "RaJiska/fck-nat/aws"
 
-  name      = "onlytodo"
+  name      = "onlytodo-fck-nat"
   vpc_id    = module.vpc.vpc_id            # Replace with your actual VPC ID reference
   subnet_id = module.vpc.public_subnets[0] # Must be placed in a public subnet
   ha_mode   = true
