@@ -68,7 +68,8 @@ jobs:
           kubectl patch ingress onlytodo -p '{"metadata":{"finalizers":null}}' --type=merge
           kubectl delete ingress onlytodo --ignore-not-found
 
-          ALB_ARN=$(aws elbv2 describe-load-balancers --names "onlytodo-shared-alb" --query "LoadBalancers[0].LoadBalancerArn" --output text)
+          ALB_DNS=$(kubectl get ingress onlytodo --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          ALB_ARN=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '$ALB_DNS')].LoadBalancerArn" --output text)
           aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
 
       - name: Wait for ALB Removal
