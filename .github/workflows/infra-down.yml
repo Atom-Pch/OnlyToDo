@@ -55,39 +55,21 @@ jobs:
           terraform_version: "1.14.8"
 
       - name: Configure kubectl
-        run: |
-          if aws eks describe-cluster --name "$EKS_CLUSTER" --region "$AWS_REGION" --output text; then
-            aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER"
-          else
-            echo "Warning: Cluster $EKS_CLUSTER not found in $AWS_REGION. Skipping config generation."
-          fi
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER"
 
       - name: Delete ArgoCD Applications
         run: |
           for app in onlytodo-frontend onlytodo-backend; do
-            if [ -z "$(kubectl get app $app -n argocd --ignore-not-found -o name)" ]; then
-              echo "App '$app' not found, skipping patch."
-            else
-              kubectl patch application $app -n argocd --type=merge -p '{"metadata":{"finalizers":null}}'
-            fi
             kubectl delete application $app -n argocd --ignore-not-found
           done
 
       - name: Delete Ingress
         run: |
-          ALB_DNS=$(kubectl get ingress onlytodo --ignore-not-found -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          kubectl patch ingress onlytodo -p '{"metadata":{"finalizers":null}}' --type=merge
+          kubectl delete ingress onlytodo --ignore-not-found
 
-          if [ -n "$ALB_DNS" ]; then
-            echo -e "ALB found: $ALB_DNS\nProceeding with cleanup..."
-
-            kubectl patch ingress onlytodo -p '{"metadata":{"finalizers":null}}' --type=merge
-            kubectl delete ingress onlytodo --ignore-not-found
-
-            ALB_ARN=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '$ALB_DNS')].LoadBalancerArn" --output text)
-            aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
-          else
-            echo "No ALB found in AWS. Skipping."
-          fi
+          ALB_ARN=$(aws elbv2 describe-load-balancers --names "onlytodo-shared-alb" --query "LoadBalancers[0].LoadBalancerArn" --output text)
+          aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
 
       - name: Wait for ALB Removal
         run: |
