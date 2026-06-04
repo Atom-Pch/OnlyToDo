@@ -1,6 +1,6 @@
-# 📋 DevOps To-Do List — Learning Project
+# 📋 OnlyToDo - A DevOps Project
 
-A simple To-Do web application built as a hands-on playground for practising SDLC, cloud, and infrastructure engineering. The app itself (task tracking with authentication) is intentionally minimal — the real work is everything underneath: the pipeline, infrastructure, and deployment architecture.
+A simple To-Do web application built as a hands-on playground for practising SDLC, cloud, and infrastructure engineering. The app itself (task tracking with authentication) is intentionally minimal, the real work is everything underneath: the pipeline, infrastructure, and deployment architecture.
 
 ---
 
@@ -13,7 +13,7 @@ A simple To-Do web application built as a hands-on playground for practising SDL
 ## ⚠️ Project Status & Important Notes
 
 - **Work in progress.** Expect active refactoring, cleanup, and occasional breakage as the project evolves.
-- **Budget-constrained.** This runs on the AWS Free Tier and promotional credits. As a result, certain production best practices — multi-AZ deployments, advanced security layers, comprehensive logging — are intentionally compromised or omitted.
+- **Budget-constrained.** This runs on the AWS Free Tier and promotional credits. As a result, certain production best practices like multi-AZ deployments, advanced security layers, comprehensive logging are intentionally compromised or omitted.
 - **Known anti-patterns.** Architectural shortcuts exist for cost reasons. They are acknowledged, not accidental.
 - **Evolving stack.** Tools are swapped in and out as the project progresses. The sections below reflect the current state.
 
