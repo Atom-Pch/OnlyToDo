@@ -71,6 +71,8 @@ A simple To-Do web application built as a hands-on playground for practising SDL
 
 ![Architecture](AWS_Architecture.svg)
 
+Diagram of the *inside* of the EKS cluster is coming soon!
+
 ## 🔄 Pipeline Overview
 
 ```
