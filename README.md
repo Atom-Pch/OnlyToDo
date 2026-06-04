@@ -67,6 +67,10 @@ A simple To-Do web application built as a hands-on playground for practising SDL
 
 ---
 
+## 📐 Architecture Overview
+
+![Architecture](AWS_Architecture.svg)
+
 ## 🔄 Pipeline Overview
 
 ```
