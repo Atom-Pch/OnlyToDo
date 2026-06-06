@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { ListPlus, Trash2, Upload, CircleAlert } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let todos = $state<any[]>([]);
@@ -170,18 +171,7 @@
 			<div
 				class="mb-8 flex items-center rounded-xl border border-red-500/50 bg-red-900/50 p-4 text-red-200 shadow-sm"
 			>
-				<svg
-					class="mr-3 h-6 w-6 flex-shrink-0"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-					></path></svg
-				>
+				<CircleAlert class="mr-3 h-6 w-6 flex-shrink-0" />
 				<p class="text-sm font-medium">{error}</p>
 			</div>
 		{/if}
@@ -212,14 +202,7 @@
 					<label
 						class="flex w-full flex-1 cursor-pointer items-center justify-center truncate rounded-xl border border-gray-600 px-3 py-2.5 text-center text-xs font-medium text-gray-300 transition hover:bg-gray-700 hover:text-white"
 					>
-						<svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-							></path></svg
-						>
+						<Upload class="mr-1 h-4 w-4" />
 						{imageFile && imageFile.length > 0 ? imageFile[0].name : 'Attach Image'}
 						<input type="file" accept="image/*" bind:files={imageFile} class="hidden" />
 					</label>
@@ -227,7 +210,7 @@
 					<button
 						type="submit"
 						disabled={isUploading}
-						class="flex flex-1 transform items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+						class="cursor-pointer flex flex-1 transform items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
 					>
 						{#if isUploading}
 							<svg
@@ -307,14 +290,7 @@
 							aria-label="Delete task"
 							title="Delete"
 						>
-							<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-								><path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-								></path></svg
-							>
+							<Trash2 class="h-5 w-5" />
 						</button>
 					</div>
 				</li>
@@ -323,18 +299,7 @@
 				<div
 					class="rounded-2xl border border-dashed border-gray-700 bg-gray-800/40 px-4 py-16 text-center"
 				>
-					<svg
-						class="mx-auto mb-4 h-12 w-12 text-gray-600"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						><path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-						></path></svg
-					>
+					<ListPlus class="mx-auto mb-2 h-10 w-10 text-gray-600"/>
 					<h3 class="text-lg font-medium text-gray-300">No tasks yet</h3>
 					<p class="mt-1 text-sm text-gray-500">Get started by creating a new task above.</p>
 				</div>

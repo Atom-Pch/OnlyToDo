@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { ArrowLeft } from '@lucide/svelte';
 </script>
 
 <svelte:head>
@@ -27,14 +28,7 @@
 			href="/"
 			class="inline-flex transform items-center justify-center rounded-xl border border-transparent bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3.5 text-base font-medium text-white shadow-md transition-all hover:-translate-y-0.5 hover:opacity-90 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none"
 		>
-			<svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M10 19l-7-7m0 0l7-7m-7 7h18"
-				></path>
-			</svg>
+			<ArrowLeft class="mr-1" />
 			Back to Homepage
 		</a>
 	</div>
