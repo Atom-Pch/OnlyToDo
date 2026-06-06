@@ -100,6 +100,7 @@ func main() {
 	// To-Do Routes (Protected by Auth Middleware)
 	mux.HandleFunc("GET /api/todos", app.requireAuth(app.getTodos))
 	mux.HandleFunc("POST /api/todos", app.requireAuth(app.createTodo))
+	mux.HandleFunc("PATCH /api/todos/{id}", app.requireAuth(app.updateTodo))
 	mux.HandleFunc("DELETE /api/todos/{id}", app.requireAuth(app.deleteTodo))
 	mux.HandleFunc("GET /api/todos/s3-presign", app.requireAuth(app.presignS3))
 

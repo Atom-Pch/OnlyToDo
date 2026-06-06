@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { ListPlus, Trash2, Upload, CircleAlert, SquarePen } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let todos = $state<any[]>([]);
@@ -9,6 +10,9 @@
 	let imageFile = $state(<FileList | null>null);
 	let isUploading = $state(false);
 	let isLoading = $state(true);
+	let editingId = $state<number | null>(null);
+	let editTitle = $state('');
+	let editDescription = $state('');
 
 	// Fetch the To-Dos as soon as the page loads
 	onMount(async () => {
@@ -101,6 +105,66 @@
 		}
 	}
 
+	async function toggleTodo(todo: any) {
+		const newState = !todo.is_completed;
+		try {
+			const res = await fetch(`/api/todos/${todo.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'include',
+				body: JSON.stringify({ is_completed: newState })
+			});
+
+			if (res.ok) {
+				// Flip the completion state in the UI
+				todos = todos.map((t) => (t.id === todo.id ? { ...t, is_completed: newState } : t));
+			} else {
+				console.error('Failed to update task');
+			}
+		} catch (err) {
+			console.error('Could not connect to the API to update the To-Do.', err);
+		}
+	}
+
+	function startEdit(todo: any) {
+		editingId = todo.id;
+		editTitle = todo.title;
+		editDescription = todo.description ?? '';
+	}
+
+	function cancelEdit() {
+		editingId = null;
+	}
+
+	async function saveEdit(todo: any) {
+		const title = editTitle.trim();
+		if (!title) {
+			error = 'Title cannot be empty.';
+			return;
+		}
+		try {
+			const res = await fetch(`/api/todos/${todo.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'include',
+				body: JSON.stringify({ title, description: editDescription })
+			});
+
+			if (res.ok) {
+				todos = todos.map((t) =>
+					t.id === todo.id ? { ...t, title, description: editDescription } : t
+				);
+				editingId = null;
+				error = '';
+			} else {
+				error = 'Failed to update task.';
+			}
+		} catch (err) {
+			console.error('Could not connect to the API to update the To-Do.', err);
+			error = 'Could not connect to the API to update the To-Do.';
+		}
+	}
+
 	async function deleteTodo(id: number) {
 		try {
 			const res = await fetch(`/api/todos/${id}`, {
@@ -149,18 +213,7 @@
 			<div
 				class="mb-8 flex items-center rounded-xl border border-red-500/50 bg-red-900/50 p-4 text-red-200 shadow-sm"
 			>
-				<svg
-					class="mr-3 h-6 w-6 flex-shrink-0"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-					></path></svg
-				>
+				<CircleAlert class="mr-3 h-6 w-6 flex-shrink-0" />
 				<p class="text-sm font-medium">{error}</p>
 			</div>
 		{/if}
@@ -191,14 +244,7 @@
 					<label
 						class="flex w-full flex-1 cursor-pointer items-center justify-center truncate rounded-xl border border-gray-600 px-3 py-2.5 text-center text-xs font-medium text-gray-300 transition hover:bg-gray-700 hover:text-white"
 					>
-						<svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-							></path></svg
-						>
+						<Upload class="mr-1 h-4 w-4" />
 						{imageFile && imageFile.length > 0 ? imageFile[0].name : 'Attach Image'}
 						<input type="file" accept="image/*" bind:files={imageFile} class="hidden" />
 					</label>
@@ -206,7 +252,7 @@
 					<button
 						type="submit"
 						disabled={isUploading}
-						class="flex flex-1 transform items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+						class="flex flex-1 transform cursor-pointer items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
 					>
 						{#if isUploading}
 							<svg
@@ -238,65 +284,114 @@
 		<ul class="space-y-4">
 			{#each todos.toReversed() as todo}
 				<li
-					class="group flex flex-col justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-md transition hover:border-gray-600 sm:flex-row sm:items-start sm:p-6"
+					class={'group flex flex-col justify-between gap-4 rounded-2xl border p-5 shadow-md transition sm:flex-row sm:items-start sm:p-6 ' +
+						(todo.is_completed
+							? 'border-green-600 bg-green-900/40 hover:border-green-500'
+							: 'border-red-600 bg-red-900/30 hover:border-red-500')}
 				>
-					<div class="min-w-0 flex-1">
-						<h3 class="text-xl font-semibold break-words text-gray-100">{todo.title}</h3>
-						{#if todo.description}
-							<p class="text-md mt-2 leading-relaxed break-words whitespace-pre-wrap text-gray-400">
-								{todo.description}
-							</p>
-						{/if}
-						{#if todo.image_url}
-							<div
-								class="mt-4 inline-block max-w-full overflow-hidden rounded-xl border border-gray-700"
-							>
-								<img
-									src={todo.image_url}
-									alt="Task attachment"
-									class="max-h-64 w-auto object-cover object-center shadow-sm sm:max-h-80"
-								/>
+					{#if editingId === todo.id}
+						<div class="min-w-0 flex-1">
+							<input
+								type="text"
+								bind:value={editTitle}
+								class="w-full border-b-2 border-gray-600 bg-transparent px-2 py-2 text-lg text-white placeholder-gray-500 transition focus:border-indigo-500 focus:outline-none"
+								placeholder="Title"
+							/>
+							<textarea
+								bind:value={editDescription}
+								rows="2"
+								class="text-md mt-2 w-full resize-none border-b border-gray-700 bg-transparent px-2 py-1 text-gray-300 placeholder-gray-600 transition focus:border-indigo-500 focus:outline-none"
+								placeholder="Add description (Optional)"
+							></textarea>
+							{#if todo.image_url}
+								<div
+									class="mt-4 inline-block max-w-full overflow-hidden rounded-xl border border-gray-700"
+								>
+									<img
+										src={todo.image_url}
+										alt="Task attachment"
+										class="max-h-64 w-auto object-cover object-center shadow-sm sm:max-h-80"
+									/>
+								</div>
+							{/if}
+							<div class="mt-3 flex gap-2">
+								<button
+									onclick={() => saveEdit(todo)}
+									class="cursor-pointer rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+								>
+									Save
+								</button>
+								<button
+									onclick={cancelEdit}
+									class="cursor-pointer rounded-lg border border-gray-600 px-4 py-1.5 text-sm font-medium text-gray-300 transition hover:bg-gray-700 hover:text-white"
+								>
+									Cancel
+								</button>
 							</div>
-						{/if}
-					</div>
-
-					<div
-						class="flex flex-shrink-0 items-center justify-end transition-opacity group-hover:opacity-100 sm:flex-col sm:justify-start sm:opacity-0"
-					>
+						</div>
+					{:else}
 						<button
-							class="rounded-lg p-2 text-red-400 transition hover:bg-red-900/30 hover:text-red-300"
-							onclick={() => deleteTodo(todo.id)}
-							aria-label="Delete task"
-							title="Delete"
+							type="button"
+							onclick={() => toggleTodo(todo)}
+							aria-pressed={todo.is_completed}
+							title="Toggle complete"
+							class="min-w-0 flex-1 cursor-pointer text-left"
 						>
-							<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-								><path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-								></path></svg
-							>
+							<h3 class="text-xl font-semibold break-words text-gray-100">{todo.title}</h3>
+							{#if todo.description}
+								<p
+									class="text-md mt-2 leading-relaxed break-words whitespace-pre-wrap text-gray-400"
+								>
+									{todo.description}
+								</p>
+							{/if}
+							{#if todo.image_url}
+								<div
+									class="mt-4 inline-block max-w-full overflow-hidden rounded-xl border border-gray-700"
+								>
+									<img
+										src={todo.image_url}
+										alt="Task attachment"
+										class="max-h-64 w-auto object-cover object-center shadow-sm sm:max-h-80"
+									/>
+								</div>
+							{/if}
 						</button>
-					</div>
+					{/if}
+
+					{#if editingId !== todo.id}
+						<div
+							class="flex flex-shrink-0 items-center justify-end transition-opacity group-hover:opacity-100 sm:flex-col sm:justify-start sm:opacity-0"
+						>
+							<button
+								class="rounded-lg p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white"
+								onclick={() => {
+									startEdit(todo);
+								}}
+								aria-label="Edit task"
+								title="Edit"
+							>
+								<SquarePen class="h-5 w-5" />
+							</button>
+							<button
+								class="rounded-lg p-2 text-red-400 transition hover:bg-red-900/30 hover:text-red-300"
+								onclick={() => {
+									deleteTodo(todo.id);
+								}}
+								aria-label="Delete task"
+								title="Delete"
+							>
+								<Trash2 class="h-5 w-5" />
+							</button>
+						</div>
+					{/if}
 				</li>
 			{/each}
 			{#if todos.length === 0 && !error}
 				<div
 					class="rounded-2xl border border-dashed border-gray-700 bg-gray-800/40 px-4 py-16 text-center"
 				>
-					<svg
-						class="mx-auto mb-4 h-12 w-12 text-gray-600"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						><path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-						></path></svg
-					>
+					<ListPlus class="mx-auto mb-2 h-10 w-10 text-gray-600" />
 					<h3 class="text-lg font-medium text-gray-300">No tasks yet</h3>
 					<p class="mt-1 text-sm text-gray-500">Get started by creating a new task above.</p>
 				</div>

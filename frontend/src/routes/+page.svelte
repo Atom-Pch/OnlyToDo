@@ -1,3 +1,7 @@
+<script lang="ts">
+	import { ArrowRight, Mail, SquareArrowOutUpRight } from '@lucide/svelte';
+</script>
+
 <main class="mx-auto max-w-4xl px-4 pt-16 pb-24 text-center sm:px-6 sm:pt-24">
 	<h1 class="mb-6 text-4xl leading-tight font-extrabold tracking-tight text-white sm:text-5xl">
 		Welcome to my <span
@@ -36,20 +40,7 @@
 				class="group inline-flex items-center text-lg font-medium text-indigo-400 transition hover:text-indigo-300"
 			>
 				Go directly to your To-Do List
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke-width="2"
-					stroke="currentColor"
-					class="ml-2 h-5 w-5 transform transition-transform group-hover:translate-x-1"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-					/>
-				</svg>
+				<ArrowRight class="ml-1 transform transition-transform group-hover:translate-x-1" />
 			</a>
 		</div>
 	</div>
@@ -57,9 +48,7 @@
 	<div class="mt-20 border-t border-gray-800 pt-16 text-left">
 		<div class="mb-12 text-center">
 			<h2 class="text-3xl font-bold tracking-tight text-white">Behind the Scenes</h2>
-			<p class="mt-3 text-gray-400">
-				Everything powering this application.
-			</p>
+			<p class="mt-3 text-gray-400">Everything powering this application.</p>
 		</div>
 
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -133,16 +122,9 @@
 						href="https://argocd.onlytodo.xyz"
 						target="_blank"
 						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 transition hover:text-indigo-300"
+						class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 transition transition-all  hover:text-indigo-300 hover:-translate-y-0.5"
 					>
-						<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-							/>
-						</svg>
+						<SquareArrowOutUpRight class="h-4 w-4" />
 						argocd.onlytodo.xyz
 					</a>
 				</div>
@@ -167,16 +149,9 @@
 						href="https://monitoring.onlytodo.xyz"
 						target="_blank"
 						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 transition hover:text-indigo-300"
+						class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 transition transition-all  hover:text-indigo-300 hover:-translate-y-0.5"
 					>
-						<svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-							/>
-						</svg>
+						<SquareArrowOutUpRight class="h-4 w-4" />
 						monitoring.onlytodo.xyz
 					</a>
 				</div>
@@ -209,19 +184,7 @@
 				href="mailto:pchompubutr@gmail.com"
 				class="group flex items-center gap-2 text-sm font-medium text-gray-400 transition-colors duration-200 hover:text-indigo-400"
 			>
-				<svg
-					class="h-4 w-4 transition-transform group-hover:scale-110"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-					></path>
-				</svg>
+				<Mail class="h-5 w-5" />
 				Email (pchompubutr@gmail.com)
 			</a>
 
