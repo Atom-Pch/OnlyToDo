@@ -101,6 +101,27 @@
 		}
 	}
 
+	async function toggleTodo(todo: any) {
+		const newState = !todo.is_completed;
+		try {
+			const res = await fetch(`/api/todos/${todo.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'include',
+				body: JSON.stringify({ is_completed: newState })
+			});
+
+			if (res.ok) {
+				// Flip the completion state in the UI
+				todos = todos.map((t) => (t.id === todo.id ? { ...t, is_completed: newState } : t));
+			} else {
+				console.error('Failed to update task');
+			}
+		} catch (err) {
+			console.error('Could not connect to the API to update the To-Do.', err);
+		}
+	}
+
 	async function deleteTodo(id: number) {
 		try {
 			const res = await fetch(`/api/todos/${id}`, {
@@ -238,9 +259,23 @@
 		<ul class="space-y-4">
 			{#each todos.toReversed() as todo}
 				<li
-					class="group flex flex-col justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-md transition hover:border-gray-600 sm:flex-row sm:items-start sm:p-6"
+					class={'group flex cursor-pointer flex-col justify-between gap-4 rounded-2xl border p-5 shadow-md transition sm:flex-row sm:items-start sm:p-6 ' +
+						(todo.is_completed
+							? 'border-green-600 bg-green-900/40 hover:border-green-500'
+							: 'border-red-600 bg-red-900/30 hover:border-red-500')}
 				>
-					<div class="min-w-0 flex-1">
+					<div
+						class="min-w-0 flex-1"
+						role="button"
+						tabindex="0"
+						onclick={() => toggleTodo(todo)}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								toggleTodo(todo);
+							}
+						}}
+					>
 						<h3 class="text-xl font-semibold break-words text-gray-100">{todo.title}</h3>
 						{#if todo.description}
 							<p class="text-md mt-2 leading-relaxed break-words whitespace-pre-wrap text-gray-400">
@@ -265,7 +300,10 @@
 					>
 						<button
 							class="rounded-lg p-2 text-red-400 transition hover:bg-red-900/30 hover:text-red-300"
-							onclick={() => deleteTodo(todo.id)}
+							onclick={(e) => {
+								e.stopPropagation();
+								deleteTodo(todo.id);
+							}}
 							aria-label="Delete task"
 							title="Delete"
 						>

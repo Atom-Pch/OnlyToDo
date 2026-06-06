@@ -140,6 +140,41 @@ func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(t)
 }
 
+func (app *App) updateTodo(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(userIDKey).(int)
+	todoID := r.PathValue("id")
+	if todoID == "" {
+		http.Error(w, "Missing To-Do ID", http.StatusBadRequest)
+		return
+	}
+
+	var payload struct {
+		IsCompleted bool `json:"is_completed"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("updateTodo"))
+	result, err := app.DB.Exec("UPDATE todos SET is_completed = $1 WHERE id = $2 AND user_id = $3", payload.IsCompleted, todoID, userID)
+	timer.ObserveDuration()
+
+	if err != nil {
+		http.Error(w, "Failed to update To-Do", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil || rowsAffected == 0 {
+		http.Error(w, "To-Do not found or unauthorized", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"is_completed": payload.IsCompleted})
+}
+
 func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(int)
 	todoID := r.PathValue("id")
