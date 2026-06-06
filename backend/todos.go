@@ -25,7 +25,7 @@ func (app *App) getTodos(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(userIDKey).(int)
 
 	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("getTodos"))
-	rows, err := app.DB.Query("SELECT id, title, description, image_url, is_completed FROM todos WHERE user_id=$1", userID)
+	rows, err := app.DB.Query("SELECT id, title, description, image_url, is_completed FROM todos WHERE user_id=$1 ORDER BY id ASC", userID)
 	timer.ObserveDuration()
 
 	if err != nil {
@@ -149,15 +149,55 @@ func (app *App) updateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload struct {
-		IsCompleted bool `json:"is_completed"`
+		Title       *string `json:"title"`
+		Description *string `json:"description"`
+		IsCompleted *bool   `json:"is_completed"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
+	// Build the UPDATE dynamically from whichever fields were provided.
+	setClauses := []string{}
+	args := []interface{}{}
+	response := map[string]interface{}{}
+
+	if payload.Title != nil {
+		if len(*payload.Title) == 0 || len(*payload.Title) > 100 {
+			http.Error(w, "Title must be between 1 and 100 characters", http.StatusBadRequest)
+			return
+		}
+		args = append(args, *payload.Title)
+		setClauses = append(setClauses, fmt.Sprintf("title = $%d", len(args)))
+		response["title"] = *payload.Title
+	}
+	if payload.Description != nil {
+		if len(*payload.Description) > 255 {
+			http.Error(w, "Description must be at most 255 characters", http.StatusBadRequest)
+			return
+		}
+		args = append(args, *payload.Description)
+		setClauses = append(setClauses, fmt.Sprintf("description = $%d", len(args)))
+		response["description"] = *payload.Description
+	}
+	if payload.IsCompleted != nil {
+		args = append(args, *payload.IsCompleted)
+		setClauses = append(setClauses, fmt.Sprintf("is_completed = $%d", len(args)))
+		response["is_completed"] = *payload.IsCompleted
+	}
+
+	if len(setClauses) == 0 {
+		http.Error(w, "No fields to update", http.StatusBadRequest)
+		return
+	}
+
+	args = append(args, todoID, userID)
+	query := fmt.Sprintf("UPDATE todos SET %s WHERE id = $%d AND user_id = $%d",
+		strings.Join(setClauses, ", "), len(args)-1, len(args))
+
 	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("updateTodo"))
-	result, err := app.DB.Exec("UPDATE todos SET is_completed = $1 WHERE id = $2 AND user_id = $3", payload.IsCompleted, todoID, userID)
+	result, err := app.DB.Exec(query, args...)
 	timer.ObserveDuration()
 
 	if err != nil {
@@ -172,7 +212,7 @@ func (app *App) updateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]bool{"is_completed": payload.IsCompleted})
+	json.NewEncoder(w).Encode(response)
 }
 
 func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
