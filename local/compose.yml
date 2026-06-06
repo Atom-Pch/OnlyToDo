@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: ../backend/
     image: onlytodo-backend
     container_name: go
     environment:
@@ -18,7 +18,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ../frontend/
     image: onlytodo-frontend
     container_name: sveltekit
     ports:
