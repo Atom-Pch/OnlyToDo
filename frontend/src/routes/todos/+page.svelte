@@ -364,7 +364,7 @@
 							class="flex flex-shrink-0 items-center justify-end transition-opacity group-hover:opacity-100 sm:flex-col sm:justify-start sm:opacity-0"
 						>
 							<button
-								class="rounded-lg p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white"
+								class="rounded-lg p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white cursor-pointer"
 								onclick={() => {
 									startEdit(todo);
 								}}
@@ -374,7 +374,7 @@
 								<SquarePen class="h-5 w-5" />
 							</button>
 							<button
-								class="rounded-lg p-2 text-red-400 transition hover:bg-red-900/30 hover:text-red-300"
+								class="rounded-lg p-2 text-red-400 transition hover:bg-red-900/30 hover:text-red-300 cursor-pointer"
 								onclick={() => {
 									deleteTodo(todo.id);
 								}}
