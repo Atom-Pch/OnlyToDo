@@ -43,7 +43,7 @@ jobs:
         if: failure()
         with:
           name: test-report
-          path: ./frontend/results/
+          path: ./frontend/test-results/
           retention-days: 1
 
   build_frontend:
