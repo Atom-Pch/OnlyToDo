@@ -4,7 +4,7 @@ test.describe('Verify landing page', () => {
     test('Homepage heading', async ({ page }) => {
         await page.goto('/');
 
-        await expect(page.locator('h1')).toContainText('Welcome to my To-Do App!');
+        await expect(page.locator('h1')).toContainText('Welcome to the To-Do App!');
     });
 
     test('Login buttons', async ({ page }) => {
