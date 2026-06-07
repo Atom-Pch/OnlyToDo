@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+const REGISTER_API = '**/api/register';
+
 test.describe('Verify Registration page', () => {
     test('Clicking register button navigates to register page', async ({ page }) => {
         await page.goto('/');
@@ -17,8 +19,6 @@ test.describe('Verify Registration page', () => {
         await expect(page.locator('h1')).toHaveText('Create Account');
     });
 });
-
-const REGISTER_API = '**/api/register';
 
 test.describe('Register form - successful registration', () => {
     test('valid details redirect to /login', async ({ page }) => {
