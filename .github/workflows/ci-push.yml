@@ -43,7 +43,7 @@ jobs:
         if: failure()
         with:
           name: playwright-report
-          path: ./frontend/test-results/
+          path: ./
           retention-days: 1
 
   build_frontend:
