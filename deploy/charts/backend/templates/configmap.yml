@@ -9,3 +9,4 @@ data:
   DB_NAME: "onlytodo"
   S3_BUCKET_NAME: "onlytodo-files-131912109503-us-east-2-an"
   AWS_REGION: "us-east-2"
+  SECURE_COOKIE: "true"

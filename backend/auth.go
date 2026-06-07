@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -79,12 +80,14 @@ func (app *App) loginUser(w http.ResponseWriter, r *http.Request) {
 	jwtSecret := os.Getenv("BACKEND_JWT_STRING")
 	tokenString, _ := token.SignedString([]byte(jwtSecret))
 
+	secureCookieStr := os.Getenv("SECURE_COOKIE")
+	secureCookie, err := strconv.ParseBool(secureCookieStr)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    tokenString,
 		Expires:  time.Now().Add(time.Hour * 24),
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   secureCookie,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 	})
