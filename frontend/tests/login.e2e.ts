@@ -20,7 +20,7 @@ test.describe('Verify login page', () => {
     });
 });
 
-test.describe('Login form - successful login', () => {
+test.describe('Successful login', () => {
     test('valid credentials redirect to /todos', async ({ page }) => {
         await page.route(LOGIN_API, async (route) => {
             await route.fulfill({
@@ -62,7 +62,7 @@ test.describe('Login form - successful login', () => {
     });
 });
 
-test.describe('Login form - failed login', () => {
+test.describe('Failed login', () => {
     test('invalid credentials show an error message and stay on /login', async ({ page }) => {
         await page.route(LOGIN_API, async (route) => {
             await route.fulfill({
@@ -115,7 +115,7 @@ test.describe('Login form - failed login', () => {
     });
 });
 
-test.describe('Login form - client-side validation and edge cases', () => {
+test.describe('Client-side validation and edge cases', () => {
     test('does not call the API when username and password are empty', async ({ page }) => {
         let apiWasCalled = false;
         await page.route(LOGIN_API, async (route) => {

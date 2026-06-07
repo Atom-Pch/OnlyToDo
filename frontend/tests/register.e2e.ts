@@ -20,7 +20,7 @@ test.describe('Verify Registration page', () => {
     });
 });
 
-test.describe('Register form - successful registration', () => {
+test.describe('Successful registration', () => {
     test('valid details redirect to /login', async ({ page }) => {
         await page.route(REGISTER_API, async (route) => {
             await route.fulfill({
@@ -40,7 +40,7 @@ test.describe('Register form - successful registration', () => {
     });
 });
 
-test.describe('Register form - failed registration', () => {
+test.describe('Failed registration', () => {
     test('duplicate username/email shows "Failed to create user" error and stays on /register', async ({
         page
     }) => {
@@ -95,7 +95,7 @@ test.describe('Register form - failed registration', () => {
     });
 });
 
-test.describe('Register form - client-side validation and edge cases', () => {
+test.describe('Client-side validation and edge cases', () => {
     test('does not call the API when all fields are empty', async ({ page }) => {
         let apiWasCalled = false;
         await page.route(REGISTER_API, async (route) => {
