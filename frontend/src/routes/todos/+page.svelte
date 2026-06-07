@@ -203,6 +203,7 @@
 			<h1 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Your Tasks</h1>
 			<span
 				class="rounded-full border border-gray-700 bg-gray-800 px-4 py-1.5 text-sm font-semibold text-indigo-400 shadow-sm"
+				data-testid="todos-count"
 			>
 				{todos.length}
 				{todos.length === 1 ? 'Task' : 'Tasks'}
@@ -286,8 +287,8 @@
 				<li
 					class={'group flex flex-col justify-between gap-4 rounded-2xl border p-5 shadow-md transition sm:flex-row sm:items-start sm:p-6 ' +
 						(todo.is_completed
-							? 'border-green-600 bg-green-900/40 hover:border-green-500'
-							: 'border-red-600 bg-red-900/30 hover:border-red-500')}
+							? 'border-emerald-500 bg-emerald-700/30 hover:bg-emerald-600/30'
+							: 'border-rose-500 bg-rose-700/30 hover:bg-rose-600/30')}
 				>
 					{#if editingId === todo.id}
 						<div class="min-w-0 flex-1">
@@ -364,7 +365,7 @@
 							class="flex flex-shrink-0 items-center justify-end transition-opacity group-hover:opacity-100 sm:flex-col sm:justify-start sm:opacity-0"
 						>
 							<button
-								class="rounded-lg p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white cursor-pointer"
+								class="cursor-pointer rounded-lg p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white"
 								onclick={() => {
 									startEdit(todo);
 								}}
@@ -374,7 +375,7 @@
 								<SquarePen class="h-5 w-5" />
 							</button>
 							<button
-								class="rounded-lg p-2 text-red-400 transition hover:bg-red-900/30 hover:text-red-300 cursor-pointer"
+								class="cursor-pointer rounded-lg p-2 text-red-400 transition hover:bg-red-900/30 hover:text-red-300"
 								onclick={() => {
 									deleteTodo(todo.id);
 								}}
