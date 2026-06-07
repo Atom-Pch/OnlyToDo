@@ -25,14 +25,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
       - uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and Push
         run: |
           IMAGE=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${{ inputs.repo_name }}
-          docker build --provenance=false -t $IMAGE:${GITHUB_SHA::7} ${{ inputs.context }}
+          docker build -t $IMAGE:${GITHUB_SHA::7} ${{ inputs.context }}
           docker push $IMAGE:${GITHUB_SHA::7}
