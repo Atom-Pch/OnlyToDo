@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { CircleAlert } from '@lucide/svelte';
 
 	let username = $state('');
@@ -77,7 +78,7 @@
 
 			<button
 				type="submit"
-				class="flex w-full transform justify-center rounded-xl border border-transparent bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3.5 text-base font-medium text-white shadow-md transition-all hover:-translate-y-0.5 hover:opacity-90 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none cursor-pointer"
+				class="flex w-full transform cursor-pointer justify-center rounded-xl border border-transparent bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3.5 text-base font-medium text-white shadow-md transition-all hover:-translate-y-0.5 hover:opacity-90 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none"
 			>
 				Log in
 			</button>
@@ -86,7 +87,7 @@
 		<p class="mt-8 text-center text-sm text-gray-400">
 			Don't have an account?
 			<a
-				href="/register"
+				href={resolve('/register')}
 				class="font-medium text-indigo-400 transition hover:text-indigo-300 hover:underline"
 				>Register here</a
 			>

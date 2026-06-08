@@ -1,97 +1,99 @@
 import { expect, test } from '@playwright/test';
 
-const USER_API = '**/api/who'
-const TODO_API = '**/api/todos'
+const USER_API = '**/api/who';
+const TODO_API = '**/api/todos';
 
 test.describe('Verify Todos page', () => {
-    test('todo-list landing page', async ({ page }) => {
-        await page.route(USER_API, async (route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                json: { username: 'test' }
-            });
-        });
+	test('todo-list landing page', async ({ page }) => {
+		await page.route(USER_API, async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				json: { username: 'test' }
+			});
+		});
 
-        await page.goto('/todos');
-        await expect(page.locator('h1')).toHaveText('Your Tasks');
-        await expect(page.getByTestId('todos-count')).toHaveText('0 Tasks');
-        await expect(page.getByTestId('current-user')).toHaveText('(test)');
-    })
+		await page.goto('/todos');
+		await expect(page.locator('h1')).toHaveText('Your Tasks');
+		await expect(page.getByTestId('todos-count')).toHaveText('0 Tasks');
+		await expect(page.getByTestId('current-user')).toHaveText('(test)');
+	});
 });
 
 test.describe('Todo page authentication & loading', () => {
-    test('Unauthenticated user is redirected to login', async ({ page }) => {
-        await page.route(TODO_API, async (route) => {
-            await route.fulfill({
-                status: 401,
-                contentType: 'text/plain',
-                body: 'No session found'
-            });
-        });
-        await page.goto('/todos');
-        await page.waitForURL('**/login');
-    });
+	test('Unauthenticated user is redirected to login', async ({ page }) => {
+		await page.route(TODO_API, async (route) => {
+			await route.fulfill({
+				status: 401,
+				contentType: 'text/plain',
+				body: 'No session found'
+			});
+		});
+		await page.goto('/todos');
+		await page.waitForURL('**/login');
+	});
 
-    test('Authenticated user sees their tasks after loading spinner', async ({ page }) => {
-        await page.route(USER_API, async (route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                json: { username: 'test' }
-            });
-        });
-        await page.route(TODO_API, async (route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                json: [{
-                    "id": 1,
-                    "title": "title1",
-                    "description": "desc1",
-                    "image_url": "",
-                    "is_completed": false
-                },
-                {
-                    "id": 2,
-                    "title": "title2",
-                    "description": "desc2",
-                    "image_url": "",
-                    "is_completed": true
-                }]
-            });
-        });
+	test('Authenticated user sees their tasks after loading spinner', async ({ page }) => {
+		await page.route(USER_API, async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				json: { username: 'test' }
+			});
+		});
+		await page.route(TODO_API, async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				json: [
+					{
+						id: 1,
+						title: 'title1',
+						description: 'desc1',
+						image_url: '',
+						is_completed: false
+					},
+					{
+						id: 2,
+						title: 'title2',
+						description: 'desc2',
+						image_url: '',
+						is_completed: true
+					}
+				]
+			});
+		});
 
-        await page.goto('/todos');
-        await expect(page.getByTestId('current-user')).toHaveText('(test)');
-        await expect(page.getByTestId('todos-count')).toHaveText('2 Tasks');
+		await page.goto('/todos');
+		await expect(page.getByTestId('current-user')).toHaveText('(test)');
+		await expect(page.getByTestId('todos-count')).toHaveText('2 Tasks');
 
-        // Newer tasks appear first so the order is reversed
-        await expect(page.locator('ul > li > button > h3')).toHaveText(['title2', 'title1']);
-        await expect(page.locator('ul > li > button > p')).toHaveText(['desc2', 'desc1']);
-        await expect(page.locator('ul > li')).toContainClass(['bg-emerald-700/30', 'bg-rose-700/30']);
-    });
+		// Newer tasks appear first so the order is reversed
+		await expect(page.locator('ul > li > button > h3')).toHaveText(['title2', 'title1']);
+		await expect(page.locator('ul > li > button > p')).toHaveText(['desc2', 'desc1']);
+		await expect(page.locator('ul > li')).toContainClass(['bg-emerald-700/30', 'bg-rose-700/30']);
+	});
 
-    test('Empty state shows when user has no tasks', async ({ page }) => {
-        await page.route(USER_API, async (route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                json: { username: 'test' }
-            });
-        });
-        await page.route(TODO_API, async (route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                json: null
-            });
-        });
+	test('Empty state shows when user has no tasks', async ({ page }) => {
+		await page.route(USER_API, async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				json: { username: 'test' }
+			});
+		});
+		await page.route(TODO_API, async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				json: null
+			});
+		});
 
-        await page.goto('/todos');
-        await expect(page.locator('h3')).toHaveText('No tasks yet');
-        await expect(page.locator('p')).toHaveText('Get started by creating a new task above.');
-    });
+		await page.goto('/todos');
+		await expect(page.locator('h3')).toHaveText('No tasks yet');
+		await expect(page.locator('p')).toHaveText('Get started by creating a new task above.');
+	});
 });
 
 // test.describe('Todo creation', () => {

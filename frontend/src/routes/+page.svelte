@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ArrowRight, Mail, SquareArrowOutUpRight } from '@lucide/svelte';
+	import { resolve } from '$app/paths';
 </script>
 
 <main class="mx-auto max-w-4xl px-4 pt-16 pb-24 text-center sm:px-6 sm:pt-24">
@@ -20,14 +21,14 @@
 		</p>
 		<div class="flex flex-col justify-center gap-4 sm:flex-row">
 			<a
-				href="/register"
+				href={resolve('/register')}
 				class="rounded-xl bg-gray-700 px-6 py-3 font-semibold text-white shadow-sm ring-1 ring-gray-600 transition hover:bg-gray-600"
 			>
 				Create Account
 			</a>
 
 			<a
-				href="/login"
+				href={resolve('/login')}
 				class="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 font-semibold text-white shadow-md transition hover:opacity-90"
 			>
 				Log In to Continue
@@ -36,7 +37,7 @@
 
 		<div class="mt-8 border-t border-gray-700/50 pt-6">
 			<a
-				href="/todos"
+				href={resolve('/todos')}
 				class="group inline-flex items-center text-lg font-medium text-indigo-400 transition hover:text-indigo-300"
 			>
 				Go directly to your To-Do List
@@ -122,7 +123,7 @@
 						href="https://argocd.onlytodo.xyz"
 						target="_blank"
 						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 transition transition-all  hover:text-indigo-300 hover:-translate-y-0.5"
+						class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 transition transition-all hover:-translate-y-0.5 hover:text-indigo-300"
 					>
 						<SquareArrowOutUpRight class="h-4 w-4" />
 						argocd.onlytodo.xyz
@@ -149,7 +150,7 @@
 						href="https://monitoring.onlytodo.xyz"
 						target="_blank"
 						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 transition transition-all  hover:text-indigo-300 hover:-translate-y-0.5"
+						class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 transition transition-all hover:-translate-y-0.5 hover:text-indigo-300"
 					>
 						<SquareArrowOutUpRight class="h-4 w-4" />
 						monitoring.onlytodo.xyz

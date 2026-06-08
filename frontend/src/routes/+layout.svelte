@@ -2,6 +2,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/temp_logo.png';
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 
 	let { children } = $props();
 
@@ -62,7 +63,7 @@
 		<div class="mx-auto flex max-w-7xl items-center justify-between">
 			<div class="flex items-center">
 				<a
-					href="/"
+					href={resolve('/')}
 					class="bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-xl font-bold text-transparent transition hover:opacity-80"
 				>
 					To-Do App
@@ -81,12 +82,12 @@
 					</form>
 				{:else}
 					<a
-						href="/register"
+						href={resolve('/register')}
 						class="hidden text-sm font-medium text-gray-300 transition hover:text-white sm:inline"
 						>Register</a
 					>
 					<a
-						href="/login"
+						href={resolve('/login')}
 						class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500"
 					>
 						Login

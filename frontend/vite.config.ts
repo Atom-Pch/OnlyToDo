@@ -1,13 +1,14 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
+import type { ESBuildOptions } from 'vite';
 import { playwright } from '@vitest/browser-playwright';
 import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	esbuild: {
-		drop: ['console', 'debugger'],
-	} as any,
+		drop: ['console', 'debugger']
+	} as ESBuildOptions,
 	test: {
 		expect: { requireAssertions: true },
 		projects: [
@@ -41,7 +42,7 @@ export default defineConfig({
 			// Replicates your AWS ALB path-based routing locally
 			'/api': {
 				target: 'http://localhost:8080', // Replace with your local backend port
-				changeOrigin: true,
+				changeOrigin: true
 				// rewrite: (path) => path.replace(/^\/api/, '') // Optional: Use if backend doesn't expect /api prefix
 			}
 		}

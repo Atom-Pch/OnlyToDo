@@ -1,9 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { ListPlus, Trash2, Upload, CircleAlert, SquarePen } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
-	let todos = $state<any[]>([]);
+	interface Todo {
+		id: number;
+		title: string;
+		description?: string;
+		is_completed: boolean;
+		image_url?: string;
+	}
+
+	let todos = $state<Todo[]>([]);
 	let newTitle = $state('');
 	let newDescription = $state('');
 	let error = $state('');
@@ -26,7 +35,7 @@
 			});
 
 			if (res.status === 401) {
-				goto('/login');
+				goto(resolve('/login'));
 				return;
 			}
 			if (res.ok) {
@@ -35,7 +44,7 @@
 				error = 'Failed to load To-Dos from the server.';
 			}
 		} catch (err) {
-			goto('/login');
+			goto(resolve('/login'));
 			error = 'Could not connect to the API. Is the Go backend running?';
 			console.error(err);
 		} finally {
@@ -105,7 +114,7 @@
 		}
 	}
 
-	async function toggleTodo(todo: any) {
+	async function toggleTodo(todo: Todo) {
 		const newState = !todo.is_completed;
 		try {
 			const res = await fetch(`/api/todos/${todo.id}`, {
@@ -126,7 +135,7 @@
 		}
 	}
 
-	function startEdit(todo: any) {
+	function startEdit(todo: Todo) {
 		editingId = todo.id;
 		editTitle = todo.title;
 		editDescription = todo.description ?? '';
@@ -136,7 +145,7 @@
 		editingId = null;
 	}
 
-	async function saveEdit(todo: any) {
+	async function saveEdit(todo: Todo) {
 		const title = editTitle.trim();
 		if (!title) {
 			error = 'Title cannot be empty.';
@@ -283,7 +292,7 @@
 		</div>
 
 		<ul class="space-y-4">
-			{#each todos.toReversed() as todo}
+			{#each todos.toReversed() as todo (todo.id)}
 				<li
 					class={'group flex flex-col justify-between gap-4 rounded-2xl border p-5 shadow-md transition sm:flex-row sm:items-start sm:p-6 ' +
 						(todo.is_completed
