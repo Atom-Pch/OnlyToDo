@@ -30,6 +30,22 @@ func main() {
 		log.Println("Warning: Error loading .env file (ignoring if variables are set in environment)")
 	}
 
+	required := []string{
+		"DB_HOST", "DB_PORT", "DB_USER", "DB_PASS", "DB_NAME",
+		"JWT_TOKEN", "S3_BUCKET_NAME", "AWS_REGION", "SECURE_COOKIE",
+	}
+
+	var missing []string
+	for _, key := range required {
+		if _, exists := os.LookupEnv(key); !exists {
+			missing = append(missing, key)
+		}
+	}
+
+	if len(missing) > 0 {
+		log.Fatalf("missing environment variable(s): %v", missing)
+	}
+
 	// 1. Initialize Database
 	dbUser := os.Getenv("DB_USER")
 	dbPass := os.Getenv("DB_PASS")
