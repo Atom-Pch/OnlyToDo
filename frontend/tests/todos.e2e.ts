@@ -1,17 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const USER_API = '**/api/who';
 const TODO_API = '**/api/todos';
 
+async function mockUserLogin(page: Page) {
+	await page.route(USER_API, async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			json: { username: 'test' }
+		});
+	});
+}
+
 test.describe('Verify Todos page', () => {
 	test('todo-list landing page', async ({ page }) => {
-		await page.route(USER_API, async (route) => {
-			await route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				json: { username: 'test' }
-			});
-		});
+		await mockUserLogin(page)
 
 		await page.goto('/todos');
 		await expect(page.locator('h1')).toHaveText('Your Tasks');
@@ -34,13 +38,7 @@ test.describe('Todo page authentication & loading', () => {
 	});
 
 	test('Authenticated user sees their tasks after loading spinner', async ({ page }) => {
-		await page.route(USER_API, async (route) => {
-			await route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				json: { username: 'test' }
-			});
-		});
+		await mockUserLogin(page)
 		await page.route(TODO_API, async (route) => {
 			await route.fulfill({
 				status: 200,
@@ -75,13 +73,7 @@ test.describe('Todo page authentication & loading', () => {
 	});
 
 	test('Empty state shows when user has no tasks', async ({ page }) => {
-		await page.route(USER_API, async (route) => {
-			await route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				json: { username: 'test' }
-			});
-		});
+		await mockUserLogin(page)
 		await page.route(TODO_API, async (route) => {
 			await route.fulfill({
 				status: 200,
