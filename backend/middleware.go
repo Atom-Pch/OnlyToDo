@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"regexp"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"net/http"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"time"
@@ -128,7 +128,7 @@ func (app *App) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 var numericSegment = regexp.MustCompile(`/\d+`)
 
 func normalizePath(path string) string {
-    return numericSegment.ReplaceAllString(path, "/{id}")
+	return numericSegment.ReplaceAllString(path, "/{id}")
 }
 
 // The Metrics Middleware

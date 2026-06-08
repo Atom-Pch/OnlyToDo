@@ -4,10 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
@@ -15,6 +11,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log"
+	"net/http"
+	"os"
 )
 
 // App holds our external dependencies so all our routes can access them
@@ -46,7 +45,12 @@ func main() {
 		log.Fatalf("FATAL. Failed to open database connection: %v", err)
 		return
 	}
-	defer db.Close()
+
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("Failed to close database connection: %v", err)
+		}
+	}()
 
 	if err := db.Ping(); err != nil {
 		log.Printf("FATAL. Database ping failed: %v", err)
@@ -54,7 +58,11 @@ func main() {
 	} else {
 		log.Println("Successfully connected to PostgreSQL!")
 		var v string
-		db.QueryRow("SELECT version()").Scan(&v)
+		err = db.QueryRow("SELECT version()").Scan(&v)
+		if err != nil {
+			log.Fatalf("FATAL. Failed to select in database: %v", err)
+			return
+		}
 		log.Println(v)
 	}
 
@@ -88,7 +96,11 @@ func main() {
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("API is healthy and running!"))
+		_, err = w.Write([]byte("API is healthy and running!"))
+		if err != nil {
+			http.Error(w, "Failed to Write", http.StatusInternalServerError)
+			return
+		}
 	})
 
 	// Auth Routes

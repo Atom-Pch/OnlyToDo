@@ -2,15 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
-
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/crypto/bcrypt"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
 )
 
 type Credentials struct {
@@ -26,7 +26,11 @@ var authFailuresTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 
 func (app *App) registerUser(w http.ResponseWriter, r *http.Request) {
 	var creds Credentials
-	json.NewDecoder(r.Body).Decode(&creds)
+	err := json.NewDecoder(r.Body).Decode(&creds)
+	if err != nil {
+		http.Error(w, "Failed to decode JSON credentials", http.StatusInternalServerError)
+		return
+	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), 14)
 	if err != nil {
@@ -46,18 +50,26 @@ func (app *App) registerUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(`{"message": "User registered successfully"}`))
+	_, err = w.Write([]byte(`{"message": "User registered successfully"}`))
+	if err != nil {
+		http.Error(w, "Failed to Write", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *App) loginUser(w http.ResponseWriter, r *http.Request) {
 	var creds Credentials
-	json.NewDecoder(r.Body).Decode(&creds)
+	err:=json.NewDecoder(r.Body).Decode(&creds)
+	if err != nil {
+		http.Error(w, "Failed to decode JSON credentials", http.StatusInternalServerError)
+		return
+	}
 
 	var storedHash string
 	var userID int
 
 	timer := prometheus.NewTimer(dbQueryDuration.WithLabelValues("loginUser"))
-	err := app.DB.QueryRow("SELECT id, password_hash FROM users WHERE username=$1", creds.Username).Scan(&userID, &storedHash)
+	err = app.DB.QueryRow("SELECT id, password_hash FROM users WHERE username=$1", creds.Username).Scan(&userID, &storedHash)
 	timer.ObserveDuration()
 
 	if err != nil {
@@ -82,6 +94,10 @@ func (app *App) loginUser(w http.ResponseWriter, r *http.Request) {
 
 	secureCookieStr := os.Getenv("SECURE_COOKIE")
 	secureCookie, err := strconv.ParseBool(secureCookieStr)
+	if err != nil {
+		log.Fatalf("FATAL. SECURE_COOKIE env %v", err)
+		return
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    tokenString,
@@ -92,7 +108,11 @@ func (app *App) loginUser(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	w.Write([]byte(`{"message": "Logged in successfully"}`))
+	_, err = w.Write([]byte(`{"message": "Logged in successfully"}`))
+	if err != nil {
+		http.Error(w, "Failed to Write", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *App) logoutUser(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +123,11 @@ func (app *App) logoutUser(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Path:     "/",
 	})
-	w.Write([]byte(`{"message": "Logged out"}`))
+	_, err := w.Write([]byte(`{"message": "Logged out"}`))
+	if err != nil {
+		http.Error(w, "Failed to Write", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *App) getCurrentUser(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +170,11 @@ func (app *App) getCurrentUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	err = json.NewEncoder(w).Encode(map[string]string{
 		"username": username,
 	})
+	if err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		return
+	}
 }

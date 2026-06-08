@@ -32,7 +32,11 @@ func (app *App) getTodos(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to query database", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("Failed to close Rows: %v", err)
+		}
+	}()
 
 	var todos []Todo
 	for rows.Next() {
@@ -69,7 +73,11 @@ func (app *App) getTodos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(todos)
+	err = json.NewEncoder(w).Encode(todos)
+	if err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *App) presignS3(w http.ResponseWriter, r *http.Request) {
@@ -92,10 +100,14 @@ func (app *App) presignS3(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	err = json.NewEncoder(w).Encode(map[string]string{
 		"upload_url": req.URL,
 		"image_url":  fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", app.BucketName, os.Getenv("AWS_REGION"), uniqueFilename),
 	})
+	if err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +149,11 @@ func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(t)
+	err = json.NewEncoder(w).Encode(t)
+	if err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *App) updateTodo(w http.ResponseWriter, r *http.Request) {
@@ -212,7 +228,11 @@ func (app *App) updateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
@@ -266,5 +286,9 @@ func (app *App) deleteTodo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Write([]byte(`{"message": "Task '` + todoTitle + `' deleted successfully"}`))
+	_, err = w.Write([]byte(`{"message": "Task '` + todoTitle + `' deleted successfully"}`))
+	if err != nil {
+		http.Error(w, "Failed to Write", http.StatusInternalServerError)
+		return
+	}
 }
