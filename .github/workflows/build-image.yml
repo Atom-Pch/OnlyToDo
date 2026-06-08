@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   build:
-    name: Build and Push Docker Image
+    name: Build, Scan, and Push Docker Image
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -32,9 +32,25 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr-login
 
-      - name: Build and Push
+      - name: Build
+        id: build
         run: |
           IMAGE=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${{ inputs.repo_name }}
           docker build -t $IMAGE:${GITHUB_SHA::7} ${{ inputs.context }}
-          docker push $IMAGE:${GITHUB_SHA::7}
+          echo "image=$IMAGE:${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: image
+          image-ref: ${{ steps.build.outputs.image }}
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+      - name: Push
+        run: docker push ${{ steps.build.outputs.image }}
