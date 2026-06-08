@@ -15,7 +15,7 @@ async function mockUserLogin(page: Page) {
 
 test.describe('Verify Todos page', () => {
 	test('todo-list landing page', async ({ page }) => {
-		await mockUserLogin(page)
+		await mockUserLogin(page);
 
 		await page.goto('/todos');
 		await expect(page.locator('h1')).toHaveText('Your Tasks');
@@ -38,7 +38,7 @@ test.describe('Todo page authentication & loading', () => {
 	});
 
 	test('Authenticated user sees their tasks after loading spinner', async ({ page }) => {
-		await mockUserLogin(page)
+		await mockUserLogin(page);
 		await page.route(TODO_API, async (route) => {
 			await route.fulfill({
 				status: 200,
@@ -73,7 +73,7 @@ test.describe('Todo page authentication & loading', () => {
 	});
 
 	test('Empty state shows when user has no tasks', async ({ page }) => {
-		await mockUserLogin(page)
+		await mockUserLogin(page);
 		await page.route(TODO_API, async (route) => {
 			await route.fulfill({
 				status: 200,
