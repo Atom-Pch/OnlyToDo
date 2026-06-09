@@ -79,8 +79,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: backend-config
-
-            # --- SECURE VARIABLES ---
           env:
             - name: DB_PASS
               valueFrom:
