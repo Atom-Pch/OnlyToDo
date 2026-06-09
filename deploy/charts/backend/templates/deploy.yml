@@ -76,24 +76,12 @@ spec:
               memory: 512Mi
               cpu: 1024m
 
-          env:
-            # Later for EKS, we will move these to ConfigMaps and Secrets!
-            - name: DB_HOST
-              value: "onlytodo.c962yekmm5ja.us-east-2.rds.amazonaws.com"
-            - name: DB_PORT
-              value: "5432"
-            - name: DB_USER
-              value: "atom"
-            - name: DB_NAME
-              value: "onlytodo"
-            - name: S3_BUCKET_NAME
-              value: "onlytodo-files-131912109503-us-east-2-an"
-            - name: AWS_REGION
-              value: "us-east-2"
-            - name: PORT
-              value: "8080"
+          envFrom:
+            - configMapRef:
+                name: backend-config
 
             # --- SECURE VARIABLES ---
+          env:
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
