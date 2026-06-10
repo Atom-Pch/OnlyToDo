@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const USER_API = '**/api/who';
 const TODO_API = '**/api/todos';
-const USERNAME = 'testUser'
+const USERNAME = 'testUser';
 
 async function mockUserLogin(page: Page) {
 	await page.route(USER_API, async (route) => {
@@ -72,7 +72,10 @@ test.describe('Todo page authentication & loading', () => {
 		// Newer tasks appear first so the order is reversed
 		await expect(page.getByRole('heading', { level: 3 })).toHaveText(['title2', 'title1']);
 		await expect(page.locator('p')).toHaveText(['desc2', 'desc1']);
-		await expect(page.getByRole('listitem')).toContainClass(['bg-emerald-700/30', 'bg-rose-700/30']);
+		await expect(page.getByRole('listitem')).toContainClass([
+			'bg-emerald-700/30',
+			'bg-rose-700/30'
+		]);
 	});
 
 	test('Empty state shows when user has no tasks', async ({ page }) => {
@@ -115,7 +118,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 					json: null
 				});
 			} else {
-				await route.abort()
+				await route.abort();
 			}
 		});
 
@@ -150,7 +153,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 					json: null
 				});
 			} else {
-				await route.abort()
+				await route.abort();
 			}
 		});
 
@@ -187,7 +190,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 					json: null
 				});
 			} else {
-				await route.abort()
+				await route.abort();
 			}
 		});
 
@@ -249,7 +252,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 					json: null
 				});
 			} else {
-				await route.abort()
+				await route.abort();
 			}
 		});
 
@@ -288,7 +291,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 					json: null
 				});
 			} else {
-				await route.abort()
+				await route.abort();
 			}
 		});
 
@@ -296,7 +299,9 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 		await page.getByLabel('title').fill('a'.repeat(101));
 		await page.getByRole('button', { name: 'Add Task' }).click();
 
-		await expect(page.locator('#error-message', { hasText: 'Failed to create To-Do.'} )).toBeVisible();
+		await expect(
+			page.locator('#error-message', { hasText: 'Failed to create To-Do.' })
+		).toBeVisible();
 	});
 
 	test('Uploading state disables form during submission', async ({ page }) => {
@@ -327,7 +332,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 		await page.route(TODO_API, async (route) => {
 			if (route.request().method() === 'POST') {
 				// Mock loading
-				await new Promise(resolve => setTimeout(resolve, 2000));
+				await new Promise((resolve) => setTimeout(resolve, 2000));
 				await route.fulfill({
 					status: 201,
 					contentType: 'application/json',
@@ -345,7 +350,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 					json: null
 				});
 			} else {
-				await route.abort()
+				await route.abort();
 			}
 		});
 
