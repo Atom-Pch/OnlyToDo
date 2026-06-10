@@ -88,39 +88,135 @@ test.describe('Todo page authentication & loading', () => {
 	});
 });
 
-// test.describe('Todo creation', () => {
-//     test('Create a todo with title only', async ({ page }) => {
+test.describe('Todo creation', { tag: '@now' }, () => {
+	test('Create a todo with title only', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'POST') {
+				await route.fulfill({
+					status: 201,
+					contentType: 'application/json',
+					json: {
+						id: 1,
+						title: 'todoTitle',
+						description: '',
+						image_url: ''
+					}
+				});
+			} else if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: null
+				});
+			} else {
+				await route.abort()
+			}
+		});
 
-//     });
+		await page.goto('/todos');
+		await page.getByLabel('title').fill('todoTitle');
+		await page.getByRole('button', { name: 'Add Task' }).click();
 
-//     test('Create a todo with title and description', async ({ page }) => {
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
+		await expect(page.locator('ul > li > button > h3')).toHaveText('todoTitle');
+		await expect(page.locator('ul > li')).toContainClass('bg-rose-700/30');
+	});
 
-//     });
+	test('Create a todo with title and description', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'POST') {
+				await route.fulfill({
+					status: 201,
+					contentType: 'application/json',
+					json: {
+						id: 1,
+						title: 'todoTitle',
+						description: 'todoDesc',
+						image_url: ''
+					}
+				});
+			} else if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: null
+				});
+			} else {
+				await route.abort()
+			}
+		});
 
-//     test('Input fields clear after successful creation', async ({ page }) => {
+		await page.goto('/todos');
+		await page.getByLabel('title').fill('todoTitle');
+		await page.getByLabel('description').fill('todoDesc');
+		await page.getByRole('button', { name: 'Add Task' }).click();
 
-//     });
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
+		await expect(page.locator('ul > li > button > h3')).toHaveText('todoTitle');
+		await expect(page.locator('ul > li > button > p')).toHaveText('todoDesc');
+		await expect(page.locator('ul > li')).toContainClass('bg-rose-700/30');
+	});
 
-//     test('New todo appears in the list immediately', async ({ page }) => {
+	test('Input fields clear after successful creation', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'POST') {
+				await route.fulfill({
+					status: 201,
+					contentType: 'application/json',
+					json: {
+						id: 1,
+						title: 'todoTitle',
+						description: 'todoDesc',
+						image_url: ''
+					}
+				});
+			} else if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: null
+				});
+			} else {
+				await route.abort()
+			}
+		});
 
-//     });
+		await page.goto('/todos');
+		await page.getByLabel('title').fill('todoTitle');
+		await page.getByLabel('description').fill('todoDesc');
+		await page.getByRole('button', { name: 'Add Task' }).click();
 
-//     test('Create a todo with an image attachment via S3 presign flow', async ({ page }) => {
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
+		await expect(page.locator('ul > li > button > h3')).toHaveText('todoTitle');
+		await expect(page.locator('ul > li > button > p')).toHaveText('todoDesc');
+		await expect(page.locator('ul > li')).toContainClass('bg-rose-700/30');
+		await expect(page.getByLabel('title')).toBeEmpty();
+		await expect(page.getByLabel('description')).toBeEmpty();
+	});
 
-//     });
+	// test('New todo appears in the list immediately', async ({ page }) => {
 
-//     test('Image preview renders after attaching an image', async ({ page }) => {
+	// });
 
-//     });
+	// test('Create a todo with an image attachment via S3 presign flow', async ({ page }) => {
 
-//     test('Error message displays when creation fails', async ({ page }) => {
+	// });
 
-//     });
+	// test('Image preview renders after attaching an image', async ({ page }) => {
 
-//     test('Uploading state disables form during submission', async ({ page }) => {
+	// });
 
-//     });
-// });
+	// test('Error message displays when creation fails', async ({ page }) => {
+
+	// });
+
+	// test('Uploading state disables form during submission', async ({ page }) => {
+
+	// });
+});
 
 // test.describe('Todo completion toggle', () => {
 //     test('Clicking a task toggles it to completed', async ({ page }) => {

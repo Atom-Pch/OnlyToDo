@@ -233,14 +233,18 @@
 		>
 			<form onsubmit={addTodo} class="flex flex-col gap-4 sm:flex-row">
 				<div class="flex flex-1 flex-col gap-3">
+					<label for="title" class="sr-only">Title</label>
 					<input
+						id="title"
 						type="text"
 						placeholder="What needs to be done?"
 						bind:value={newTitle}
 						required
 						class="w-full border-b-2 border-gray-600 bg-transparent px-2 py-2 text-lg text-white placeholder-gray-500 transition focus:border-indigo-500 focus:outline-none"
 					/>
+					<label for="description" class="sr-only">Description</label>
 					<input
+						id="description"
 						type="text"
 						placeholder="Add description (Optional)"
 						bind:value={newDescription}
