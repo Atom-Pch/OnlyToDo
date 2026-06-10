@@ -299,7 +299,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 		await expect(page.locator('#error-message', { hasText: 'Failed to create To-Do.'} )).toBeVisible();
 	});
 
-	test.only('Uploading state disables form during submission', async ({ page }) => {
+	test('Uploading state disables form during submission', async ({ page }) => {
 		await mockUserLogin(page);
 
 		const UPLOAD_URL = 'https://s3bucketname.s3.us-east-2.amazonaws.com/upload-target';
