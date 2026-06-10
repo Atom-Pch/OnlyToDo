@@ -108,6 +108,7 @@
 				error = 'Failed to create To-Do.';
 			}
 		} catch (err) {
+			error = 'Failed to create To-Do.';
 			console.error('Error creating To-Do:', err);
 		} finally {
 			isUploading = false;
