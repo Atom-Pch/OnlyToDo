@@ -222,6 +222,7 @@
 
 		{#if error}
 			<div
+				id="error-message"
 				class="mb-8 flex items-center rounded-xl border border-red-500/50 bg-red-900/50 p-4 text-red-200 shadow-sm"
 			>
 				<CircleAlert class="mr-3 h-6 w-6 flex-shrink-0" />

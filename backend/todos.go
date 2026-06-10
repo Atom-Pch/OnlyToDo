@@ -95,7 +95,7 @@ func (app *App) presignS3(w http.ResponseWriter, r *http.Request) {
 	}, s3.WithPresignExpires(time.Minute*5))
 
 	if err != nil {
-		http.Error(w, "Failed to sign put request", http.StatusInternalServerError)
+		http.Error(w, "Failed to sign put request:" + err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -127,7 +127,7 @@ func (app *App) createTodo(w http.ResponseWriter, r *http.Request) {
 	timer.ObserveDuration()
 
 	if err != nil {
-		http.Error(w, "Failed to create To-Do", http.StatusInternalServerError)
+		http.Error(w, "Failed to create To-Do:" + err.Error(), http.StatusInternalServerError)
 		return
 	}
 
