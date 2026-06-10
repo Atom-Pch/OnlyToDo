@@ -126,7 +126,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 		await page.getByLabel('title').fill('todoTitle');
 		await page.getByRole('button', { name: 'Add Task' }).click();
 
-		await expect(page.getByTestId('current-user')).toHaveText('(${USERNAME})');
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
 		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
 		await expect(page.getByRole('heading', { level: 3 })).toHaveText('todoTitle');
 		await expect(page.getByRole('listitem')).toContainClass('bg-rose-700/30');
@@ -199,7 +199,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 		await page.getByLabel('description').fill('todoDesc');
 		await page.getByRole('button', { name: 'Add Task' }).click();
 
-		await expect(page.getByTestId('current-user')).toHaveText('(${USERNAME})');
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
 		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
 		await expect(page.getByRole('heading', { level: 3 })).toHaveText('todoTitle');
 		await expect(page.locator('p')).toHaveText('todoDesc');
@@ -262,7 +262,7 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 		await page.locator('input[type="file"]').setInputFiles('./tests/assets/img01.jpg');
 		await page.getByRole('button', { name: 'Add Task' }).click();
 
-		await expect(page.getByTestId('current-user')).toHaveText('(${USERNAME})');
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
 		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
 		await expect(page.getByRole('heading', { level: 3 })).toHaveText('todoTitle');
 		await expect(page.locator('p')).toHaveText('todoDesc');
