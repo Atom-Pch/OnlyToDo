@@ -78,7 +78,9 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend/
         run: |
+          # For Firefox
           export HOME="/root"
+
           npm run test
 
       - uses: actions/upload-artifact@v7
