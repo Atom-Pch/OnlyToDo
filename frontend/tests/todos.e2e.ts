@@ -404,7 +404,10 @@ test.describe('Todo completion toggle', () => {
 		await expect(page.getByRole('heading', { level: 3 })).toHaveText('title1');
 		await expect(page.locator('p')).toHaveText('desc1');
 		await expect(page.getByRole('listitem')).toContainClass('bg-rose-700/30');
-		await expect(page.getByTitle('Toggle complete status')).toHaveAttribute('aria-pressed', 'false');
+		await expect(page.getByTitle('Toggle complete status')).toHaveAttribute(
+			'aria-pressed',
+			'false'
+		);
 
 		await page.getByTitle('Toggle complete status').click();
 
@@ -462,7 +465,10 @@ test.describe('Todo completion toggle', () => {
 		await expect(page.getByRole('heading', { level: 3 })).toHaveText('title1');
 		await expect(page.locator('p')).toHaveText('desc1');
 		await expect(page.getByRole('listitem')).toContainClass('bg-rose-700/30');
-		await expect(page.getByTitle('Toggle complete status')).toHaveAttribute('aria-pressed', 'false');
+		await expect(page.getByTitle('Toggle complete status')).toHaveAttribute(
+			'aria-pressed',
+			'false'
+		);
 	});
 });
 
