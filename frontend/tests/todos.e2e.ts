@@ -96,7 +96,7 @@ test.describe('Todo page authentication & loading', () => {
 	});
 });
 
-test.describe('Todo creation', { tag: '@now' }, () => {
+test.describe('Todo creation', () => {
 	test('Create a todo with title only', async ({ page }) => {
 		await mockUserLogin(page);
 		await page.route(TODO_API, async (route) => {
@@ -364,23 +364,107 @@ test.describe('Todo creation', { tag: '@now' }, () => {
 	});
 });
 
-// test.describe('Todo completion toggle', () => {
-//     test('Clicking a task toggles it to completed', async ({ page }) => {
+test.describe('Todo completion toggle', () => {
+	test('Clicking a task toggles it to completed', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API + '/1', async (route) => {
+			if (route.request().method() === 'PATCH') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: {
+						is_completed: false
+					}
+				});
+			}
+		});
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'title1',
+							description: 'desc1',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
+		await page.goto('/todos');
 
-//     });
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
 
-//     test('Clicking a completed task toggles it back to incomplete', async ({ page }) => {
+		// Initial state
+		await expect(page.getByRole('heading', { level: 3 })).toHaveText('title1');
+		await expect(page.locator('p')).toHaveText('desc1');
+		await expect(page.getByRole('listitem')).toContainClass('bg-rose-700/30');
+		await expect(page.getByTitle('Toggle complete status')).toHaveAttribute('aria-pressed', 'false');
 
-//     });
+		await page.getByTitle('Toggle complete status').click();
 
-//     test('Completed task shows green styling, incomplete shows red', async ({ page }) => {
+		// after state
+		await expect(page.getByRole('heading', { level: 3 })).toHaveText('title1');
+		await expect(page.locator('p')).toHaveText('desc1');
+		await expect(page.getByRole('listitem')).toContainClass('bg-emerald-700/30');
+		await expect(page.getByTitle('Toggle complete status')).toHaveAttribute('aria-pressed', 'true');
+	});
 
-//     });
+	test('Clicking a completed task toggles it back to incomplete', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API + '/1', async (route) => {
+			if (route.request().method() === 'PATCH') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: {
+						is_completed: true
+					}
+				});
+			}
+		});
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'title1',
+							description: 'desc1',
+							image_url: '',
+							is_completed: true
+						}
+					]
+				});
+			}
+		});
+		await page.goto('/todos');
 
-//     test('aria-pressed attribute updates on toggle', async ({ page }) => {
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
 
-//     });
-// });
+		// Initial state
+		await expect(page.getByRole('heading', { level: 3 })).toHaveText('title1');
+		await expect(page.locator('p')).toHaveText('desc1');
+		await expect(page.getByRole('listitem')).toContainClass('bg-emerald-700/30');
+		await expect(page.getByTitle('Toggle complete status')).toHaveAttribute('aria-pressed', 'true');
+
+		await page.getByTitle('Toggle complete status').click();
+
+		// after state
+		await expect(page.getByRole('heading', { level: 3 })).toHaveText('title1');
+		await expect(page.locator('p')).toHaveText('desc1');
+		await expect(page.getByRole('listitem')).toContainClass('bg-rose-700/30');
+		await expect(page.getByTitle('Toggle complete status')).toHaveAttribute('aria-pressed', 'false');
+	});
+});
 
 // test.describe('Todo editing', () => {
 //     test('Clicking edit reveals editable title and description fields', async ({ page }) => {

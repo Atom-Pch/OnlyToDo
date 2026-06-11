@@ -350,7 +350,7 @@
 							type="button"
 							onclick={() => toggleTodo(todo)}
 							aria-pressed={todo.is_completed}
-							title="Toggle complete"
+							title="Toggle complete status"
 							class="min-w-0 flex-1 cursor-pointer text-left"
 						>
 							<h3 class="text-xl font-semibold break-words text-gray-100">{todo.title}</h3>
