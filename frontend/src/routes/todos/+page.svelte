@@ -245,13 +245,13 @@
 						class="w-full border-b-2 border-gray-600 bg-transparent px-2 py-2 text-lg text-white placeholder-gray-500 transition focus:border-indigo-500 focus:outline-none"
 					/>
 					<label for="description" class="sr-only">Description</label>
-					<input
+					<textarea
 						id="description"
-						type="text"
+						rows="2"
 						placeholder="Add description (Optional)"
 						bind:value={newDescription}
-						class="w-full border-b border-gray-700 bg-transparent px-2 py-1 text-sm text-gray-400 placeholder-gray-600 transition focus:border-indigo-500 focus:outline-none"
-					/>
+						class="w-full resize-none border-b border-gray-700 bg-transparent px-2 py-1 text-sm text-gray-400 placeholder-gray-600 transition focus:border-indigo-500 focus:outline-none"
+					></textarea>
 				</div>
 
 				<div
@@ -307,13 +307,18 @@
 				>
 					{#if editingId === todo.id}
 						<div class="min-w-0 flex-1">
+							<label for="edit-title" class="sr-only">Edit title</label>
 							<input
+								id="edit-title"
 								type="text"
 								bind:value={editTitle}
 								class="w-full border-b-2 border-gray-600 bg-transparent px-2 py-2 text-lg text-white placeholder-gray-500 transition focus:border-indigo-500 focus:outline-none"
 								placeholder="Title"
+								required
 							/>
+							<label for="edit-description" class="sr-only">Edit description</label>
 							<textarea
+								id="edit-description"
 								bind:value={editDescription}
 								rows="2"
 								class="text-md mt-2 w-full resize-none border-b border-gray-700 bg-transparent px-2 py-1 text-gray-300 placeholder-gray-600 transition focus:border-indigo-500 focus:outline-none"
@@ -377,10 +382,10 @@
 
 					{#if editingId !== todo.id}
 						<div
-							class="flex flex-shrink-0 items-center justify-end transition-opacity group-hover:opacity-100 sm:flex-col sm:justify-start sm:opacity-0"
+							class="flex flex-shrink-0 items-center justify-end transition-opacity group-hover:opacity-100 sm:flex-col sm:justify-start lg:opacity-0"
 						>
 							<button
-								class="cursor-pointer rounded-lg p-2 text-gray-300 transition hover:bg-gray-700 hover:text-white"
+								class="cursor-pointer rounded-lg p-2 text-gray-300 transition hover:bg-gray-600/50 hover:text-white"
 								onclick={() => {
 									startEdit(todo);
 								}}
@@ -390,7 +395,7 @@
 								<SquarePen class="h-5 w-5" />
 							</button>
 							<button
-								class="cursor-pointer rounded-lg p-2 text-red-400 transition hover:bg-red-900/30 hover:text-red-300"
+								class="cursor-pointer rounded-lg p-2 text-red-400 transition hover:bg-red-600/50 hover:text-red-300"
 								onclick={() => {
 									deleteTodo(todo.id);
 								}}

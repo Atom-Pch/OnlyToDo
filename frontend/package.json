@@ -15,7 +15,8 @@
 		"test": "playwright test",
 		"test:one": "playwright test --project=chromium",
 		"test:headed": "playwright test --headed",
-		"test:build": "vite build && vite preview --port 4173"
+		"test:build": "vite build && vite preview --port 4173",
+		"release": "npm run format && npm run lint && npm run check"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.4",

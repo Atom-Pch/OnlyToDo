@@ -472,31 +472,228 @@ test.describe('Todo completion toggle', () => {
 	});
 });
 
-// test.describe('Todo editing', () => {
-//     test('Clicking edit reveals editable title and description fields', async ({ page }) => {
+test.describe('Todo editing', { tag: '@now' }, () => {
+	test('Clicking edit reveals editable title and description fields', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
 
-//     });
+		await page.goto('/todos');
+		await page.getByTitle('Edit').click();
 
-//     test('Save updates the todo title and description in the list', async ({ page }) => {
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
+		await expect(page.locator('#edit-title')).toBeVisible();
+		await expect(page.locator('#edit-title')).toBeEditable();
+		await expect(page.locator('#edit-description')).toBeVisible();
+		await expect(page.locator('#edit-description')).toBeEditable();
+	});
 
-//     });
+	test('Save updates the todo title and description in the list', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
+		await page.route(TODO_API + '/1', async (route) => {
+			if (route.request().method() === 'PATCH') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: {
+						id: 1,
+						title: 'editTitle',
+						description: 'editDesc',
+						image_url: '',
+						is_completed: false
+					}
+				});
+			}
+		});
 
-//     test('Cancel discards edits and exits edit mode', async ({ page }) => {
+		await page.goto('/todos');
+		await page.getByTitle('Edit').click();
+		await page.getByLabel('Edit title').fill('editTitle');
+		await page.getByLabel('Edit description').fill('editDesc');
+		await page.getByRole('button', { name: 'Save' }).click();
 
-//     });
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
+		await expect(page.getByRole('heading', { level: 3 })).toHaveText('editTitle');
+		await expect(page.locator('p')).toHaveText('editDesc');
+	});
 
-//     test('Saving with empty title shows validation error', async ({ page }) => {
+	test('Cancel discards edits and exits edit mode', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
 
-//     });
+		await page.goto('/todos');
+		await page.getByTitle('Edit').click();
 
-//     test('Edit and delete buttons are hidden while in edit mode', async ({ page }) => {
+		// first check, fields editable
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
+		await expect(page.locator('#edit-title')).toBeVisible();
+		await expect(page.locator('#edit-title')).toBeEditable();
+		await expect(page.locator('#edit-description')).toBeVisible();
+		await expect(page.locator('#edit-description')).toBeEditable();
 
-//     });
+		await page.getByRole('button', { name: 'Cancel' }).click();
 
-//     test('Error message displays when save fails', async ({ page }) => {
+		await expect(page.getByRole('heading', { level: 3 })).toHaveText('testTitle');
+		await expect(page.locator('p')).toHaveText('testDesc');
+		await expect(page.locator('#edit-title')).not.toBeVisible();
+		await expect(page.locator('#edit-description')).not.toBeVisible();
+	});
 
-//     });
-// });
+	test('Saving with empty title shows validation error', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
+
+		await page.goto('/todos');
+		await page.getByTitle('Edit').click();
+		await page.getByLabel('Edit title').fill('');
+		await page.getByRole('button', { name: 'Save' }).click();
+
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
+		await expect(
+			page.locator('#error-message', { hasText: 'Title cannot be empty.' })
+		).toBeVisible();
+	});
+
+	test('Edit and delete buttons are hidden while in edit mode', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
+
+		await page.goto('/todos');
+		await page.getByTitle('Edit').click();
+
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
+		await expect(page.getByTitle('Edit')).not.toBeVisible();
+		await expect(page.getByTitle('Delete')).not.toBeVisible();
+	});
+
+	test('Error message displays when save fails', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'PATCH') {
+				await route.fulfill({
+					status: 500,
+					contentType: 'application/json',
+					json: {
+						id: 1,
+						title: 'a'.repeat(101),
+						description: '',
+						image_url: ''
+					}
+				});
+			} else if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			} else {
+				await route.abort();
+			}
+		});
+
+		await page.goto('/todos');
+		await page.getByTitle('Edit').click();
+		await page.getByLabel('Edit title').fill('a'.repeat(101));
+		await page.getByRole('button', { name: 'Save' }).click();
+
+		await expect(
+			page.locator('#error-message', { hasText: 'Failed to update task.' })
+		).toBeVisible();
+	});
+});
 
 // test.describe('Todo deletion', () => {
 //     test('Deleting a task removes it from the list', async ({ page }) => {
