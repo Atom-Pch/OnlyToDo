@@ -24,7 +24,7 @@ export default defineConfig({
 	],
 	use: {
 		// launchOptions: {
-		// 	slowMo: 1000
+		// 	slowMo: 500
 		// },
 		baseURL: 'http://localhost:4173'
 	}

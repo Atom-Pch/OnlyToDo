@@ -805,12 +805,34 @@ test.describe('Todo deletion', () => {
 	});
 });
 
-// test.describe('Todo page error handling', () => {
-//     test('Fetch failure (network error) redirects to login', async ({ page }) => {
+test.describe('Todo page error handling', { tag: '@now' }, () => {
+	test('Fetch failure (network error) redirects to login', async ({ page }) => {
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.abort('connectionfailed');
+			}
+		});
 
-//     });
+		await page.goto('/todos');
+		await page.waitForURL('**/login');
 
-//     test('Non-401 fetch failure shows load error message', async ({ page }) => {
+		await expect(page.locator('h1')).toHaveText('Welcome Back');
+	});
 
-//     });
-// });
+	test('Non-401 fetch failure shows load error message', async ({ page }) => {
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 502,
+					contentType: 'text/html'
+				});
+			}
+		});
+
+		await page.goto('/todos');
+
+		await expect(
+			page.locator('#error-message', { hasText: 'Failed to load To-Dos from the server.' })
+		).toBeVisible();
+	});
+});
