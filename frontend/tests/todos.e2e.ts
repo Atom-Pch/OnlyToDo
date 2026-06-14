@@ -472,7 +472,7 @@ test.describe('Todo completion toggle', () => {
 	});
 });
 
-test.describe('Todo editing', { tag: '@now' }, () => {
+test.describe('Todo editing', () => {
 	test('Clicking edit reveals editable title and description fields', async ({ page }) => {
 		await mockUserLogin(page);
 		await page.route(TODO_API, async (route) => {
@@ -654,18 +654,7 @@ test.describe('Todo editing', { tag: '@now' }, () => {
 	test('Error message displays when save fails', async ({ page }) => {
 		await mockUserLogin(page);
 		await page.route(TODO_API, async (route) => {
-			if (route.request().method() === 'PATCH') {
-				await route.fulfill({
-					status: 500,
-					contentType: 'application/json',
-					json: {
-						id: 1,
-						title: 'a'.repeat(101),
-						description: '',
-						image_url: ''
-					}
-				});
-			} else if (route.request().method() === 'GET') {
+			if (route.request().method() === 'GET') {
 				await route.fulfill({
 					status: 200,
 					contentType: 'application/json',
@@ -679,8 +668,20 @@ test.describe('Todo editing', { tag: '@now' }, () => {
 						}
 					]
 				});
-			} else {
-				await route.abort();
+			}
+		});
+		await page.route(TODO_API + '/1', async (route) => {
+			if (route.request().method() === 'PATCH') {
+				await route.fulfill({
+					status: 400,
+					contentType: 'application/json',
+					json: {
+						id: 1,
+						title: 'a'.repeat(101),
+						image_url: '',
+						is_completed: false
+					}
+				});
 			}
 		});
 
@@ -689,25 +690,120 @@ test.describe('Todo editing', { tag: '@now' }, () => {
 		await page.getByLabel('Edit title').fill('a'.repeat(101));
 		await page.getByRole('button', { name: 'Save' }).click();
 
+		await expect(page.getByTestId('current-user')).toHaveText(`(${USERNAME})`);
+		await expect(page.getByTestId('todos-count')).toHaveText('1 Task');
 		await expect(
 			page.locator('#error-message', { hasText: 'Failed to update task.' })
 		).toBeVisible();
 	});
 });
 
-// test.describe('Todo deletion', () => {
-//     test('Deleting a task removes it from the list', async ({ page }) => {
+test.describe('Todo deletion', () => {
+	test('Deleting a task removes it from the list', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
+		await page.route(TODO_API + '/1', async (route) => {
+			if (route.request().method() === 'DELETE') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'text/plain'
+				});
+			}
+		});
 
-//     });
+		await page.goto('/todos');
+		await page.getByTitle('Delete').click();
 
-//     test('Task count badge decreases after deletion', async ({ page }) => {
+		await expect(page.getByRole('listitem')).not.toBeVisible();
+		await expect(page.locator('h3')).toHaveText('No tasks yet');
+		await expect(page.locator('p')).toHaveText('Get started by creating a new task above.');
+	});
 
-//     });
+	test('Task count badge decreases after deletion', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
+		await page.route(TODO_API + '/1', async (route) => {
+			if (route.request().method() === 'DELETE') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'text/plain'
+				});
+			}
+		});
 
-//     test('Deleting the last task shows the empty state', async ({ page }) => {
+		await page.goto('/todos');
+		await page.getByTitle('Delete').click();
 
-//     });
-// });
+		await expect(page.getByTestId('todos-count')).toHaveText('0 Tasks');
+	});
+
+	test('Deleting the last task shows the empty state', async ({ page }) => {
+		await mockUserLogin(page);
+		await page.route(TODO_API, async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					json: [
+						{
+							id: 1,
+							title: 'testTitle',
+							description: 'testDesc',
+							image_url: '',
+							is_completed: false
+						}
+					]
+				});
+			}
+		});
+		await page.route(TODO_API + '/1', async (route) => {
+			if (route.request().method() === 'DELETE') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'text/plain'
+				});
+			}
+		});
+
+		await page.goto('/todos');
+		await page.getByTitle('Delete').click();
+
+		await expect(page.locator('h3')).toHaveText('No tasks yet');
+		await expect(page.locator('p')).toHaveText('Get started by creating a new task above.');
+	});
+});
 
 // test.describe('Todo page error handling', () => {
 //     test('Fetch failure (network error) redirects to login', async ({ page }) => {
