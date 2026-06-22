@@ -1,3 +1,3 @@
 image:
   repository: 131912109503.dkr.ecr.us-east-2.amazonaws.com/onlytodo-backend
-  tag: c1a4483 # Image Updater will overwrite this field
+  tag: 189d8a5 # Image Updater will overwrite this field
