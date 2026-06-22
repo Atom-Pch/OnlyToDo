@@ -47,6 +47,7 @@
 	},
 	"dependencies": {
 		"@lucide/svelte": "^1.17.0",
+		"undici": "^6.27.0",
 		"undici-types": "^6.27.0"
 	}
 }
