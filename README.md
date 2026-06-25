@@ -6,7 +6,7 @@ A simple To-Do web application built as a hands-on playground for practising SDL
 
 ## 🌍 Live Demo: [onlytodo.xyz](http://onlytodo.xyz)
 
-> **⏳ Availability notice:** To conserve AWS credits, the environment runs on a strict schedule. The infrastructure is automatically provisioned each morning and fully destroyed each evening. It is only accessible **weekdays, 09:00–18:00 Bangkok time (UTC+7)**, not accounting for cold-start time and DNS propagation. Outside these hours, the environment does not exist.
+> **⏳ Availability notice:** My promotional AWS credits are running out, as such, the application will soon be migrated from AWS **EKS** to AWS **ECS** to make it sustainable to host cost-wise. In the meantime, the live demo will be unavailable.
 
 ---
 
